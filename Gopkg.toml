@@ -1,0 +1,15 @@
+required = [
+  "github.com/sirupsen/logrus"
+]
+
+[prune]
+  non-go = true
+  go-tests = true
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.4"
+
+[[constraint]]
+  name = "github.com/spf13/viper"
+  version = "1.0.0"

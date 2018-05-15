@@ -1,0 +1,99 @@
+version: '2'
+
+# ---------------------------------------------------------------------------- #
+
+services:
+
+  # -------------------------------------------------------------------------- #
+
+  go:
+    build:
+      dockerfile: dev/Dockerfile
+      context: .
+    image: jancajthaml/rest-contract-test-base
+    volumes:
+      - ./dev/lifecycle:/opt/lifecycle
+      - .:/go/src/github.com/jancajthaml/rest-contract-test
+    working_dir: /go/src/github.com/jancajthaml/rest-contract-test
+    environment:
+      - GOOS
+      - GOARCH
+      - GOPATH=/go
+      - COMPOSE_PROJECT_NAME
+    entrypoint: ["go"]
+    privileged: true
+
+  # -------------------------------------------------------------------------- #
+
+  service:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: jancajthaml/rest-contract-test
+    restart: "no"
+    environment:
+      - WALL_LAKE_HOSTNAME=bbtest
+      - WALL_METRICS_REFRESHRATE=1s
+      - WALL_METRICS_OUTPUT=/reports/metrics_test.json
+
+  # -------------------------------------------------------------------------- #
+
+  sync:
+    extends: go
+    entrypoint: ["dep"]
+    command: ["ensure"]
+
+  # -------------------------------------------------------------------------- #
+
+  init:
+    extends: go
+    entrypoint: ["dep"]
+    command: ["init"]
+
+  # -------------------------------------------------------------------------- #
+
+  update:
+    extends: go
+    entrypoint: ["dep"]
+    command: ["ensure", "-update"]
+
+  # -------------------------------------------------------------------------- #
+
+  fetch:
+    extends: go
+    entrypoint: ["dep"]
+    command: ["ensure", "-add", "github.com/codegangsta/cli"]
+
+  # -------------------------------------------------------------------------- #
+
+  lint:
+    extends: go
+    entrypoint: ["/opt/lifecycle/lint"]
+
+  # -------------------------------------------------------------------------- #
+
+  package:
+    extends: go
+    entrypoint: ["/opt/lifecycle/package"]
+
+  test:
+    extends: go
+    command: ["test", "-v", "./...", "-timeout=20s"]
+
+  # -------------------------------------------------------------------------- #
+
+  bench:
+    extends: go
+    environment:
+      - GOMAXPROCS=1
+    command: ["test", "-v", "./...", "-benchmem", "-bench=.", "-timeout=20s"]
+
+# ---------------------------------------------------------------------------- #
+
+volumes:
+  journal:
+    driver: local
+  metrics:
+    driver: local
+
+# ---------------------------------------------------------------------------- #
