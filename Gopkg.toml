@@ -11,5 +11,9 @@ required = [
   version = "1.0.4"
 
 [[constraint]]
-  name = "github.com/spf13/viper"
-  version = "1.0.0"
+  branch = "v0"
+  name = "gopkg.in/raml.v0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/tsaikd/go-raml-parser"

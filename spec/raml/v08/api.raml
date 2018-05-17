@@ -1,0 +1,17 @@
+#%RAML 0.8
+
+title: A CRUD API for Users and Groups
+
+mediaType: application/json
+
+/users:
+  description: All the users
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "foo": "bar"
+              }

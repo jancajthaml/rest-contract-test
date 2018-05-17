@@ -19,6 +19,9 @@ FROM golang:1.10-alpine
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh curl
 
+# INFO temporary gcc support for RAML parsers
+RUN apk add --no-cache gcc musl-dev
+
 RUN curl -L https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o /usr/bin/dep && \
     chmod +x /usr/bin/dep
 
