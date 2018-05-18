@@ -16,9 +16,9 @@ package commands
 
 import (
 	"os"
+	"fmt"
 
 	"github.com/codegangsta/cli"
-	"github.com/sirupsen/logrus"
 )
 
 func GlobalFlags() []cli.Flag {
@@ -53,8 +53,8 @@ func try(fn func(c *cli.Context) error) func(c *cli.Context) error {
 			if c.GlobalBool("verbose") {
 				panic(err)
 			} else {
-				logrus.Error(err)
-				logrus.Error("command failed. use --verbose to see full stacktrace")
+				fmt.Println(err)
+				fmt.Println("command failed. use --verbose to see full stacktrace")
 				return err
 			}
 		}

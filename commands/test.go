@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/codegangsta/cli"
-	"github.com/sirupsen/logrus"
 
 	"github.com/jancajthaml/rest-contract-test/parser"
 	"github.com/jancajthaml/rest-contract-test/parser/raml"
@@ -76,11 +75,8 @@ func CmdTest(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println(apiDefinition)
 
-		// Iterate and print all endpoints
-		for _, v := range apiDefinition.Resources {
-			logrus.Info(v)
-		}
 
 	default:
 		return fmt.Errorf("unsupported document")

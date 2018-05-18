@@ -16,12 +16,32 @@ package parser
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"io"
 )
 
-func GetDocumentType(file string) (string) {
-	// FIXME check suffix
+func GetDocumentType(file string) string {
+	switch filepath.Ext(file) {
+
+	case ".raml":
+		// raml versions: { 0.8, 1.0, 2.0 }
+		return "RAML " + getRamlVersion(file)
+
+	case ".json", ".yaml", ".yml":
+		// https://github.com/OAI/OpenAPI-Specification
+		// https://github.com/BigstickCarpet/swagger-parser
+		// https://github.com/go-swagger/go-swagger
+		// swagger versions: { 1.0, 1.1, 1.2, 2.0, 3.0, 3.1 }
+		return ""
+
+	default:
+		return ""
+
+	}
+}
+
+func getRamlVersion(file string) string {
 
 	// FIXME RAML below
 	f, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
@@ -48,10 +68,10 @@ func GetDocumentType(file string) (string) {
 	switch strings.Split(string(buf), "\n")[0] { // FIXME
 
 	case "#%RAML 0.8":
-		return "RAML 0.8"
+		return "0.8"
 
 	case "#%RAML 1.0":
-		return "RAML 1.0"
+		return "1.0"
 
 	default:
 		return ""
