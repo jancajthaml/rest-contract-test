@@ -7,7 +7,8 @@ trap exit INT TERM
 ################################################################################
 
 dist=bin
-platforms=(linux darwin)
+#platforms=(linux darwin)
+platforms=(darwin)
 
 ################################################################################
 
@@ -57,12 +58,9 @@ for platform in "${platforms[@]}" ; do
 done
 wait
 
-if [ ! -f ${dist}/linux-${version} ] ; then
-  echo "failed to build"
-  exit 1
+if [ -f ${dist}/linux-${version} ] ; then
+  cp ${dist}/linux-${version} ${dist}/latest
 fi
-
-cp ${dist}/linux-${version} ${dist}/latest
 
 echo "[info] done"
 

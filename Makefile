@@ -52,15 +52,13 @@ bbtest:
 .PHONY: package
 package:
 	docker-compose run --rm package
-	docker-compose build service
+	@#docker-compose build service
 
 .PHONY: verify
 verify:
-	@echo "RAML 0.8"
+	@echo "\nRAML 0.8"
 	@find ./bin -type f -name "darwin*" -exec ./{} test spec/raml/v08/api.raml \;
-	@echo "RAML 1.0"
+	@echo "\nRAML 1.0"
 	@echo "not implemented"
-	#@find ./bin -type f -name "darwin*" -exec ./{} test spec/raml/v10/api.raml \;
-	@echo "RAML 2.0"
+	@echo "\nRAML 2.0"
 	@echo "not implemented"
-	#@find ./bin -type f -name "darwin*" -exec ./{} test spec/raml/v20/api.raml \;

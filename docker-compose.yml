@@ -31,10 +31,6 @@ services:
       context: .
     image: jancajthaml/rest-contract-test
     restart: "no"
-    environment:
-      - WALL_LAKE_HOSTNAME=bbtest
-      - WALL_METRICS_REFRESHRATE=1s
-      - WALL_METRICS_OUTPUT=/reports/metrics_test.json
 
   # -------------------------------------------------------------------------- #
 
@@ -62,7 +58,7 @@ services:
   fetch:
     extends: go
     entrypoint: ["dep"]
-    command: ["ensure", "-add", "github.com/Jumpscale/go-raml"]
+    command: ["ensure", "-add", "github.com/codegangsta/cli"]
 
   # -------------------------------------------------------------------------- #
 
