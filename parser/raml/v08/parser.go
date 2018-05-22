@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package raml
+package v08
 
 import (
-	ramlv10 "github.com/tsaikd/go-raml-parser/parser" // needs GCC (cgo) :/ :( !!!
 	ramlv08 "gopkg.in/raml.v0"
 )
 
@@ -26,13 +25,4 @@ func RAMLv08(file string) (*ramlv08.APIDefinition, error) {
 	}
 
 	return apiDefinition, nil
-}
-
-func RAMLv10(file string) (*ramlv10.RootDocument, error) {
-	apiDefinition, err := ramlv10.NewParser().ParseFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	return &apiDefinition, nil
 }

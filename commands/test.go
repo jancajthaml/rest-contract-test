@@ -20,68 +20,33 @@ import (
 	"github.com/codegangsta/cli"
 
 	"github.com/jancajthaml/rest-contract-test/parser"
-	"github.com/jancajthaml/rest-contract-test/parser/raml"
 )
 
-
 func CmdTest(c *cli.Context) error {
-	file := c.Args().First()
-	if len(file) == 0 {
-		return fmt.Errorf("no file provided")
+	resource := c.Args().First()
+	if len(resource) == 0 {
+		return fmt.Errorf("no resource provided")
 	}
 
-	switch parser.GetDocumentType(file) {
+	contract := new(parser.Contract)
 
-	// INFO does not work with includes but good MVP for now
-	case "RAML 0.8":
-		apiDefinition, err := raml.RAMLv08(file)
-		if err != nil {
-			return err
-		}
+	// FIXME determine if resource is url or local file
+	err := contract.FromFile(resource)
+	if err != nil {
+		return err
+	}
 
+	fmt.Printf("+------------------------------------------------------------------------\n")
+	fmt.Printf("| %s (%s)\n", contract.Source, contract.Type)
+	fmt.Printf("+------------------------------------------------------------------------\n")
+	fmt.Printf("| title: %s\n", contract.Name)
+	fmt.Printf("+------------------------------------------------------------------------\n")
+	for _, endpoint := range contract.Endpoints {
+		fmt.Printf("| %s     | %s\n", endpoint.Method, endpoint.Path)
+	}
+	if len(contract.Endpoints) > 0 {
 		fmt.Printf("+------------------------------------------------------------------------\n")
-		fmt.Printf("| RAML %s\n", file)
-		fmt.Printf("+------------------------------------------------------------------------\n")
-		fmt.Printf("| title: %s\n", apiDefinition.Title)
-		fmt.Printf("+------------------------------------------------------------------------\n")
-
-		// Iterate and print all endpoints
-		for k, v := range apiDefinition.Resources {
-			if v.Get != nil {
-				fmt.Printf("| GET     | %s\n", k)
-			}
-			if v.Head != nil {
-				fmt.Printf("| HEAD    | %s\n", k)
-			}
-			if v.Post != nil {
-				fmt.Printf("| POST    | %s\n", k)
-			}
-			if v.Put != nil {
-				fmt.Printf("| PUT     | %s\n", k)
-			}
-			if v.Patch != nil {
-				fmt.Printf("| PATCH   | %s\n", k)
-			}
-			if v.Delete != nil {
-				fmt.Printf("| DELETE  | %s\n", k)
-			}
-		}
-
-		fmt.Printf("+------------------------------------------------------------------------\n")
-
-	// INFO Does not work
-	case "RAML 1.0":
-		apiDefinition, err := raml.RAMLv10(file)
-		if err != nil {
-			return err
-		}
-		fmt.Println(apiDefinition)
-
-
-	default:
-		return fmt.Errorf("unsupported document")
 	}
 
 	return nil
 }
-

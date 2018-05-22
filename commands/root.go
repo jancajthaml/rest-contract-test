@@ -15,8 +15,8 @@
 package commands
 
 import (
-	"os"
 	"fmt"
+	"os"
 
 	"github.com/codegangsta/cli"
 )
@@ -34,7 +34,7 @@ func All() []cli.Command {
 	return []cli.Command{
 		{
 			Name:   "test",
-			Usage:  "FILE, tests contract provided documentation file",
+			Usage:  "RESOURCE, tests contract provided documentation resource",
 			Action: try(CmdTest),
 		},
 	}
