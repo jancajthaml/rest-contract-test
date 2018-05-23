@@ -7,9 +7,5 @@ required = [
   go-tests = true
 
 [[constraint]]
-  branch = "v0"
-  name = "gopkg.in/raml.v0"
-
-[[constraint]]
   branch = "master"
   name = "github.com/tsaikd/go-raml-parser"

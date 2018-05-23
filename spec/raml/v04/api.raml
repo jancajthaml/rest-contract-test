@@ -1,0 +1,792 @@
+#%RAML 0.8
+---
+title: Unbounce API
+baseUri: https://api.unbounce.com
+version: v0.4
+
+documentation:
+  - title: Getting Started
+    content: |
+        A new version of the Unbounce API (Beta) is now ready to be used! We are opening it up slowly but we would love to hear what you’re ready to build and the plans that you have to better integrate Unbounce with other products.
+
+  - title: Authorization
+    content: |
+      There are two ways to authorize your application: using OAuth 2.0 tokens
+      or an API key. Here's how to determine which option to use:
+      * If the request requires authorization for an individual's private
+        data, let's say you want to build an application that will retrieve a
+        user's Unbounce account information on their behalf, then the
+        application must provide an OAuth 2.0 token.
+      * If the request doesn't require authorization from other users, let's
+        say you only want to retrieve the data for a single account, then you
+        only require an API key.
+
+
+      ## API Keys
+      You can use HTTP Basic Auth to interact with our API via API keys. Use
+      your Unbounce API Key as the username and nothing as the password.
+
+              curl -u API_KEY: -H "Accept: application/vnd.unbounce.api.v0.4+json" -X GET https://api.unbounce.com
+
+      All connections require encryption via SSL, so make sure you use the
+      HTTPS protocol in your requests.
+
+      ### Managing API Keys
+
+      <div class="chapter-sidebar">
+        <div class="content">
+          <h2>Do you want API Access but you're not on an Essential, Premium or Enterprise plan?</h2>
+          <p>No problem! You can request access so we can enable it for you ASAP.</p>
+          <button class="btn-primary md-trigger" data-modal="#api-key-modal">Request API Access</button>
+        </div>
+      </div>
+
+      We have enabled API Access to all of our customers on an Essential, Premium or Enterprise plan. Now you can create one or more API Keys within the app (and yes, auto-serve OAuth is coming soon).
+
+      1. Log in to your Unbounce account and go to Manage Account
+
+      1. Click on API Access on the left sidebar menu
+
+      1. Create a new API Key
+
+        <div class="iframe-wrapper"><iframe src="//fast.wistia.net/embed/iframe/3xizqh19jt" allowtransparency="true" frameborder="0" scrolling="no" class="wistia_embed" name="wistia_embed" allowfullscreen mozallowfullscreen webkitallowfullscreen oallowfullscreen msallowfullscreen width="640" height="387"></iframe></div>
+        <script src="//fast.wistia.net/assets/external/E-v1.js" async></script>
+
+      1. Test your new API Key by running:
+
+             curl -u API_KEY: -H "Accept: application/vnd.unbounce.api.v0.4+json" -X GET https://api.unbounce.com/accounts
+
+         Or alternatively, browse the [API Console](https://api.unbounce.com/console.html)
+         and use your API Key as the username, leaving the password field blank.
+
+      ### Permissions
+
+      API keys currently act like Unbounce account administrators, this means
+      the API key allows the client application to view every resource that an
+      administrator of your account can view:
+
+      * Accounts
+      * Sub Accounts or Clients
+      * Domains
+      * Page Groups
+      * Pages
+      * Leads
+      * Users
+
+
+      ## OAuth
+      OAuth is a protocol that enables applications to act on behalf of their
+      users.
+
+      ### Using OAuth
+
+      <div class="chapter-sidebar">
+        <div class="content">
+          <h2>Register a new OAuth Application</h2>
+          <p>We're still working on providing self-service for OAuth applications, but in the mean time, you can register one by filling this form.</p>
+          <button class="btn-primary md-trigger" data-modal="#oauth-modal">Register OAuth Application </button>
+        </div>
+      </div>
+
+      Once you have registered your OAuth Application and have received your Client ID and Client Secret:
+
+      1. Authorize your application
+
+        <div class=" url">`https://api.unbounce.com/oauth/authorize?response_type=code&client_id=CLIENT_ID&redirect_uri=URL_ENCODED_CLIENT_REDIRECT_URI`</div>
+
+      1. The Unbounce API OAuth server will return a temporary code to the callback URL you previously registered for your application.
+
+      1. Your application needs to validate this code before receiving an
+      access token. The URL you need to validate with is:
+
+        <div class="url">`https://api.unbounce.com/oauth/token`</div>
+
+      1. Now you can make requests to the server using your access token:
+
+              curl -X GET -H "Accept: application/vnd.unbounce.api.v0.4+json" -H "Authorization: Bearer OAUTH_ACCESS_TOKEN" https://api.unbounce.com/accounts
+
+      ### Permissions
+
+      OAuth tokens grant the same permissions that the user that is authenticating already has.
+
+  - title: Rate Limiting
+    content: |
+        To make the API fast for everybody, we have a rate limit of 500 requests
+        per minute per user account and IP address. If you get a <strong>status
+        code 429</strong> on your response, it means that you have exceeded this
+        rate limit.
+
+  - title: Errors
+    content: |
+        Unbounce uses conventional HTTP response codes to indicate the success
+        or failure of an API request.
+
+        <br />
+
+        <div class="method-list">
+          <h5 class="method-list-title">HTTP Response Codes</h5>
+          <ul>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>200</h3>
+                <div class="method-list-item-validation">OK</div>
+              </div>
+              <div class="method-list-item-description">Successful request.</div>
+            </li>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>400</h3>
+                <div class="method-list-item-validation">Bad Request</div>
+              </div>
+              <div class="method-list-item-description">The request could not be understood, possible syntax malformation.</div>
+            </li>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>401</h3>
+                <div class="method-list-item-validation">Unauthorized Request</div>
+              </div>
+              <div class="method-list-item-description">The request requires user authentication. API Key or Access Token is missing.</div>
+            </li>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>403</h3>
+                <div class="method-list-item-validation">Forbidden Access</div>
+               </div>
+              <div class="method-list-item-description">The API Key is forbidden to access the resource, or the Access Token is bad or has expired.</div>
+            </li>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>404</h3>
+                <div class="method-list-item-validation">Not Found</div>
+               </div>
+              <div class="method-list-item-description">The server has not found anything matching the request-uri.</div>
+            </li>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>409</h3>
+                <div class="method-list-item-validation">Version Conflict</div>
+               </div>
+              <div class="method-list-item-description">The request could not be completed due to a conflict with the current state of the resource.</div>
+            </li>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>429</h3>
+                <div class="method-list-item-validation">Too many requests</div>
+              </div>
+              <div class="method-list-item-description">Too many request in a given amount of time.</div>
+            </li>
+            <li class="method-list-item">
+              <div class="method-list-item-label">
+                <h3>500</h3>
+                <div class="method-list-item-validation">Server Error</div>
+              </div>
+              <div class="method-list-item-description">Something went wrong on Unbounce's end.</div>
+            </li>
+          </ul>
+        </div>
+
+  - title: Versions
+    content: |
+        ## 0.4
+
+        This is the latest version of our API. Optionally, you can pass in the explicit version of the API in the request header:
+
+              -H "Accept: application/vnd.unbounce.api.v0.4+json"
+
+        ## 0.3
+
+        As of May 2018, the 0.3 version of our API is no longer accessible. If you had previously used this legacy version, you need to update your code to access the current version. Please find a reference of the changes below.
+
+        ### Changes between 0.3 and 0.4
+
+        - Removed the endpoint to list all leads for a given sub-account (as of May 2018)
+
+        - Snake case property names
+
+        <div class="url">{ "accountId" : 52 } => { "account_id" : 52 }</div>
+
+        - Using string in favor of integer for ID fields
+
+        <div class="url">{ "accountId" : 52 } => { "account_id" : "52" }</div>
+
+        - page_uuid is renamed to page_id
+
+        <div class="url">{ "page_uuid" : "abc-123" } => { "page_id" : "abc-123" }</div>
+
+        - Omit optional properties instead of nullifying them
+
+        <div class="url">{ "page_id" : "abc-123", "created_at" : null } => { "page_id" : "abc-123" }</div>
+
+        - Replaced date format for consistency with query parameters
+
+        <div class="url">{ “created_at” : “2015-12-16T00:34:47+00:00” } => { “created_at” : “2015-12-16T00:34:47.000Z” }</div>
+
+        - Removed internal_page_id field from page tests
+
+        - Removed uuid field in sub_accounts
+
+        - Removed options from account and sub_account
+
+
+        <br />
+
+mediaType: application/vnd.unbounce.api.v0.4+json
+
+schemas:
+  - api_root:     !include schema/api_root.json
+    account:      !include schema/account.json
+    accounts:     !include schema/accounts.json
+    sub_account:  !include schema/sub_account.json
+    sub_accounts: !include schema/sub_accounts.json
+    domain:       !include schema/domain.json
+    domains:      !include schema/domains.json
+    page:         !include schema/page.json
+    pages:        !include schema/pages.json
+    page_groups:  !include schema/page_groups.json
+    form_fields:  !include schema/form_fields.json
+    lead:         !include schema/lead.json
+    leads:        !include schema/leads.json
+    new_lead:     !include schema/new_lead.json
+    user:         !include schema/user.json
+    error:        !include schema/common/error_v3.1.json
+
+securitySchemes:
+  - api_key:
+      description: |
+        You can use HTTP Basic Auth to interact with our API via API keys.
+        Use your Unbounce API Key as the username and nothing as the password.
+      type: Basic Authentication
+      describedBy:
+        headers:
+          Authorization:
+            description: |
+               The basic auth token built with the API key as the user name
+               and an empty string as the password.
+            type: string
+        responses:
+          401:
+            body:
+            description: |
+              ApiKey missing.
+          403:
+            body:
+            description: |
+              ApiKey is forbidden to access resource.
+
+  - oauth_2_0:
+      description: |
+        Unbounce supports OAuth 2.0 for authenticating API requests.
+        You will need to authenticate (or have an active session)
+        on our web application when initiating the OAuth flow.
+      type: OAuth 2.0
+      describedBy:
+        headers:
+          Authorization:
+            description: |
+              Used to send a valid OAuth 2 Bearer token.
+            type: string
+        responses:
+          401:
+            body:
+            description: |
+              Access Token is missing.
+          403:
+            body:
+            description: |
+              Bad or expired Access Token.
+      settings:
+        authorizationUri: https://api.unbounce.com/oauth/authorize
+        accessTokenUri: https://api.unbounce.com/oauth/token
+        authorizationGrants: [ code ]
+
+traits:
+  - versioned:
+      headers:
+        Accept:
+          default: application/vnd.unbounce.api.v0.4+json
+          enum:
+            - application/vnd.unbounce.api.v0.4+json
+
+  - sortable_by_creation_date:
+      queryParameters:
+        sort_order:
+          description: Sort by creation date.
+          example: desc
+          type: string
+          enum: [ asc, desc ]
+          required: false
+          default: asc
+
+  - countable:
+      queryParameters:
+        count:
+          description: When true, don't return the response's collection attribute.
+          example: true
+          type: boolean
+          required: false
+          default: false
+
+  - paged:
+      queryParameters:
+        from:
+          description: Limit results to those created after from.
+          example: "2014-12-31T00:00:00.000Z"
+          type: string
+          required: false
+        to:
+          description: Limit results to those created before to.
+          example: "2014-12-31T23:59:59.999Z"
+          type: string
+          required: false
+        offset:
+          description: Omit the first offset number of results.
+          example: 3
+          type: integer
+          required: false
+          minimum: 0
+          default: 0
+        limit:
+          description: Only return limit number of results.
+          example: 100
+          type: integer
+          required: false
+          minimum: 0
+          maximum: 1000
+          default: 50
+
+  - subCollection:
+      responses:
+        404:
+          body:
+            schema: error
+
+  - legacyPages:
+      description: |
+        This is a legacy resource, prefer accessing pages from the `/pages` resource.
+        This resource lists published and unpublished pages for the specified account, sub-account or page group.
+        Pages are initially unpublished when created.
+        When the user publishes the page they become available at their specified URL.
+
+resourceTypes:
+  - collection:
+      get:
+        is: [versioned, sortable_by_creation_date]
+        responses:
+          200:
+            body:
+              schema: <<resourcePathName>>
+
+  - countableCollection:
+      get:
+        is: [versioned, countable, sortable_by_creation_date]
+        responses:
+          200:
+            body:
+              schema: <<resourcePathName>>
+
+  - pagedCollection:
+      get:
+        is: [versioned, paged, countable, sortable_by_creation_date]
+        responses:
+          200:
+            body:
+              schema: <<resourcePathName>>
+      post?:
+        is: [versioned]
+        responses:
+          201:
+            headers:
+              Location:
+                type: string
+                required: true
+            body:
+              schema: <<resourcePathName | !singularize>>
+          400:
+            body:
+              schema: error
+
+  - member:
+      get:
+        is: [versioned]
+        responses:
+          200:
+            body:
+              schema: <<resourcePathName | !singularize>>
+          404:
+            body:
+              schema: error
+
+securedBy: [api_key, oauth_2_0]
+
+/:
+  securedBy: []
+  displayName: Global API
+  description: |
+    Global API meta-information.
+  get:
+    description: |
+      Retrieve the global API meta-information.
+    responses:
+      200:
+        body:
+          application/json:
+            schema: api_root
+
+/accounts:
+  type: collection
+  displayName: Accounts
+  description: |
+    The accounts collection is the entry point to the rest of the Unbounce API.
+    Your API key will give you access to all of the clients owned by your primary account.
+  get:
+    description: |
+      Retrieve the accounts collection.
+    responses:
+      200:
+        body:
+          example: !include examples/accounts/accounts_get.json
+
+  /{account_id}:
+    type: member
+    description: |
+      Unbounce pages belong to clients which, in turn, belong to accounts.
+      This API exposes a single Unbounce Account to you.
+    uriParameters:
+      account_id:
+        type: string
+    get:
+      description: |
+        Retrieve the details of a single account.
+      responses:
+        200:
+          body:
+            example: !include examples/accounts/account_get.json
+
+    /sub_accounts:
+      is: [subCollection]
+      type: pagedCollection
+      description: |
+        API _Sub Accounts_ are Unbounce _Clients_
+      get:
+        description: |
+          Retrieve all sub-accounts for the specified account.
+        responses:
+          200:
+            body:
+              example: !include examples/accounts/sub_accounts_get.json
+
+    /pages:
+      is: [legacyPages, subCollection]
+      type: pagedCollection
+      description: |
+        Pages.
+      get:
+        description: |
+          Retrieve a list of all pages for the specified account.
+        responses:
+          200:
+            body:
+              example: !include examples/accounts/pages_get.json
+
+/sub_accounts/{sub_account_id}:
+  type: member
+  displayName: Sub Accounts
+  description: |
+    Unbounce users can use sub-accounts to manage multiple projects or clients.
+    Each sub-account has it's own collection of pages, domains and other objects.
+    For interactive applications, you'd often want to allow users to select a particular sub-account to work with.
+  uriParameters:
+    sub_account_id:
+      type: string
+  get:
+    description: |
+      Retrieve the details of a single sub-account.
+    responses:
+      200:
+        body:
+          example: !include examples/sub_accounts/sub_account_get.json
+
+  /domains:
+    is: [subCollection]
+    type: pagedCollection
+    description: |
+      Custom domains.
+    get:
+      description: |
+        Retrieve a list of all custom domains belonging to a given sub-account.
+      responses:
+        200:
+          body:
+            example: !include examples/sub_accounts/domains_get.json
+
+  /page_groups:
+    is: [subCollection]
+    type: pagedCollection
+    description: |
+      Pages may optionally be organized into groups.
+    get:
+      description: |
+        Retrieve a list of all page groups for a given sub-account.
+      responses:
+        200:
+          body:
+            example: !include examples/sub_accounts/page_groups_get.json
+
+  /pages:
+    is: [legacyPages, subCollection]
+    type: pagedCollection
+    description: |
+      Pages.
+    get:
+      description: |
+        Retrieve a list of all pages for a given sub-account.
+      responses:
+        200:
+          body:
+            example: !include examples/sub_accounts/pages_get.json
+
+
+/domains/{domain_id}:
+  type: member
+  displayName: Domains
+  description: |
+    Customers can register custom domains with Unbounce, then publish pages to those domains.
+  uriParameters:
+    domain_id:
+      type: string
+  get:
+    description: |
+      Retrieve a custom domain that has been registered with Unbounce.
+    responses:
+      200:
+        body:
+          example: !include examples/domains/domain_get.json
+
+  /pages:
+    is: [legacyPages, subCollection]
+    type: pagedCollection
+    description: |
+      Pages.
+    get:
+      description: |
+        Retrieve a list of all pages based on the domain.
+      responses:
+        200:
+          body:
+            example: !include examples/domains/pages_get.json
+
+/pages:
+  type: pagedCollection
+  displayName: Pages
+  description: |
+    Access all pages for the authenticated principal.
+    An authenticated principal is either an API Key, or an OAuth client.
+    We provide this top-level resource specifically for OAuth clients.
+    Any Unbounce customer can be invited to author or view a page on a different client than their own.
+    The legacy Pages resource we provide doesn't allow for accessing these external pages.
+    This top-level resource allows you to additionally filter pages based on the specified role.
+  get:
+    description: |
+      Retrieve a list of all pages.
+    responses:
+      200:
+        body:
+          example: !include examples/pages/pages_get.json
+    queryParameters:
+      with_stats:
+        description: When true, include page stats for the collection.
+        example: true
+        type: boolean
+        required: false
+        default: false
+      role:
+        description: Restricts the scope of the returned pages.
+        example: author
+        type: string
+        enum: [ viewer, author ]
+        required: false
+
+  /{page_id}:
+    type: member
+    description: |
+      Page.
+    uriParameters:
+      page_id:
+        type: string
+    get:
+      description: |
+        Retrieve a single page.
+      responses:
+        200:
+          body:
+            example: !include examples/pages/page_get.json
+
+    /form_fields:
+      is: [subCollection]
+      type: countableCollection
+      description: |
+        Form Fields specifically refers to the forms you can add to Unbounce landing pages in the Unbounce page editor.
+      get:
+        description: |
+          Retrieve a full list of all form fields across all page variants of a specific page.
+        queryParameters:
+          include_sub_pages:
+            description: When true, include sub page form fields in the response
+            example: true
+            type: boolean
+            required: false
+            default: false
+        responses:
+          200:
+            body:
+              example: !include examples/pages/form_fields_get.json
+
+    /leads:
+      is: [subCollection]
+      type: pagedCollection
+      description: |
+        The leads collection provides access to all of the submitted leads associated with a specific page.
+      get:
+        description: |
+          Retrieve a list of all leads for a given page.
+        responses:
+          200:
+            body:
+              example: !include examples/pages/leads_get.json
+          403:
+            body:
+              schema: error
+            description: |
+              Principle not found for the given Page ID or provided credentials are not authorized to view this resource.
+
+      post:
+        description: |
+          Create a new lead.
+          New leads created via the API are marked distinctly from those created through the webapp.
+          Leads created via the API will have a new attribute in their **extra_data** field:
+
+              { 'created_by': 'api' }
+        body:
+          schema: new_lead
+          example: |
+            {
+                "conversion": true,
+                "visitor_id": "127.0.0.123543254378923893",
+                "form_submission": {
+                    "variant_id": "a",
+                    "submitter_ip": "127.0.0.1",
+                    "form_data": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "email": "jqdoe@unbounce.com"
+                    }
+                }
+            }
+        responses:
+          403:
+            body:
+              schema: error
+            description: |
+              Principle not found for the given Page ID or provided credentials are not authorized to view this resource.
+
+          422:
+            body:
+              schema: error
+            description: |
+              Missing body
+
+/page_groups/{page_group_id}/pages:
+  is: [legacyPages, subCollection]
+  type: pagedCollection
+  displayName: Page Groups
+  description: |
+    Pages may optionally be organized into groups.
+    Each page group provides a link to the pages it contains in its meta data collection.
+  uriParameters:
+    page_group_id:
+      type: string
+  get:
+    description: |
+      Retrieve a list of all pages that belong to a given page group.
+    responses:
+      200:
+        body:
+          example: !include examples/page_groups/pages_get.json
+
+/leads/{lead_id}:
+  type: member
+  displayName: Leads
+  description: |
+    There are two sets of data associated with each lead;
+    the form data submitted when the lead was collected,
+    and any optional extra data provided by 3rd party integrations with Unbounce
+    (such as lead scoring or social data).
+    Fields within the form data collection use a normalized form of the form field name.
+  uriParameters:
+    lead_id:
+      type: string
+  get:
+    description: |
+      Retrieve a single lead.
+    responses:
+      200:
+        body:
+          example: !include examples/leads/lead_get.json
+
+/users:
+  displayName: Users
+  /self:
+    securedBy: [oauth_2_0]
+    description: |
+      Data for the currently authenticated user.
+      Note that using an API Key does not authenticate as a user.
+    get:
+      is: [versioned]
+      description: |
+        Retrieve the current user.
+      responses:
+        200:
+          body:
+            example: !include examples/users/self_get.json
+            schema: user
+        400:
+          description: returned when an ApiKey is used
+          body:
+            schema: error
+        401:
+          body:
+            schema: error
+          description: |
+            Access Token is missing.
+
+  /{user_id}:
+    securedBy: [oauth_2_0]
+    is: [versioned]
+    description:
+      User data.
+    uriParameters:
+      user_id:
+        type: string
+    get:
+      description: |
+        Retrieves a particular user.
+      responses:
+        200:
+          body:
+            schema: user
+            example: !include examples/users/self_get.json
+        400:
+          description: |
+            Returned when an ApiKey is used
+          body:
+            schema: error
+        401:
+          body:
+            schema: error
+          description: |
+            Access Token is missing.
+        403:
+          body:
+            schema: error
+          description: |
+            Bad or expired Access Token.

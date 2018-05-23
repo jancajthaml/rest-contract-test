@@ -1,6 +1,5 @@
 package parser
 
-//import "fmt"
 import (
 	"fmt"
 
@@ -34,6 +33,66 @@ type Contract struct {
 	Endpoints []Endpoint
 }
 
+func fillResponses(method *v08.Method) []Response {
+
+	//for k, v := range method.Responses {
+	//fmt.Printf("%d -> example: %s , schema: %s\n", k, v.Bodies.DefaultExample, v.Bodies.DefaultSchema)
+	//}
+
+	// FIXME TBD
+
+	return nil
+}
+
+func (contract *Contract) appendEndpoint(path, method string, endpoint *v08.Method) {
+	res := Endpoint{
+		Path:      path,
+		Method:    method,
+		Responses: fillResponses(endpoint),
+		Headers:   "",
+		Request:   Request{},
+	}
+
+	contract.Endpoints = append(contract.Endpoints, res)
+}
+
+func (contract *Contract) walk(path string, resource *v08.Resource) {
+	var foundSomething = false
+
+	if resource.Get != nil {
+		foundSomething = true
+		contract.appendEndpoint(path, "GET", resource.Get)
+	}
+	if resource.Head != nil {
+		foundSomething = true
+		contract.appendEndpoint(path, "HEAD", resource.Head)
+	}
+	if resource.Post != nil {
+		foundSomething = true
+		contract.appendEndpoint(path, "POST", resource.Post)
+	}
+	if resource.Put != nil {
+		foundSomething = true
+		contract.appendEndpoint(path, "PUT", resource.Put)
+	}
+	if resource.Patch != nil {
+		foundSomething = true
+		contract.appendEndpoint(path, "PATCH", resource.Patch)
+	}
+	if resource.Delete != nil {
+		foundSomething = true
+		contract.appendEndpoint(path, "DELETE", resource.Delete)
+	}
+
+	if !foundSomething {
+		// FIXME no method meand GET and construct headers + response manually
+	}
+
+	for k, v := range resource.Nested {
+		contract.walk(path+k, v)
+	}
+}
+
 func (contract *Contract) FromFile(file string) error {
 
 	contract.Source = file
@@ -44,83 +103,15 @@ func (contract *Contract) FromFile(file string) error {
 	case "RAML 0.8":
 		contract.Type = "RAML 0.8"
 
-		apiDefinition, err := v08.RAMLv08(file)
+		rootResource, err := v08.RAMLv08(file)
 		if err != nil {
 			return err
 		}
 
-		contract.Name = apiDefinition.Title
+		contract.Name = rootResource.Title
 
-		//fmt.Printf("+------------------------------------------------------------------------\n")
-		//fmt.Printf("| RAML %s\n", file)
-		//fmt.Printf("+------------------------------------------------------------------------\n")
-		//fmt.Printf("| title: %s\n", apiDefinition.Title)
-		//fmt.Printf("+------------------------------------------------------------------------\n")
-
-		//endpoints =
-		//var endpoints []Endpoint
-
-		// Iterate and print all endpoints
-		for k, v := range apiDefinition.Resources {
-			if v.Get != nil {
-				contract.Endpoints = append(contract.Endpoints, Endpoint{
-					Path:      k,
-					Method:    "GET",
-					Responses: nil,
-					Headers:   "",
-					Request:   Request{},
-				})
-			}
-			if v.Head != nil {
-				//fmt.Printf("| HEAD    | %s\n", k)
-				contract.Endpoints = append(contract.Endpoints, Endpoint{
-					Path:      k,
-					Method:    "HEAD",
-					Responses: nil,
-					Headers:   "",
-					Request:   Request{},
-				})
-			}
-			if v.Post != nil {
-				//fmt.Printf("| POST    | %s\n", k)
-				contract.Endpoints = append(contract.Endpoints, Endpoint{
-					Path:      k,
-					Method:    "POST",
-					Responses: nil,
-					Headers:   "",
-					Request:   Request{},
-				})
-			}
-			if v.Put != nil {
-				//fmt.Printf("| PUT     | %s\n", k)
-				contract.Endpoints = append(contract.Endpoints, Endpoint{
-					Path:      k,
-					Method:    "PUT",
-					Responses: nil,
-					Headers:   "",
-					Request:   Request{},
-				})
-			}
-			if v.Patch != nil {
-				//fmt.Printf("| PATCH   | %s\n", k)
-				contract.Endpoints = append(contract.Endpoints, Endpoint{
-					Path:      k,
-					Method:    "PATCH",
-					Responses: nil,
-					Headers:   "",
-					Request:   Request{},
-				})
-			}
-			if v.Delete != nil {
-				//fmt.Printf("| DELETE  | %s\n", k)
-				contract.Endpoints = append(contract.Endpoints, Endpoint{
-					Path:      k,
-					Method:    "DELETE",
-					Responses: nil,
-					Headers:   "",
-					Request:   Request{},
-				})
-			}
+		for k, v := range rootResource.Resources {
+			contract.walk(k, &v)
 		}
 
 		return nil
@@ -134,8 +125,6 @@ func (contract *Contract) FromFile(file string) error {
 			return err
 		}
 
-		//fmt.Println(apiDefinition)
-		//return new(Contract)
 		return nil
 
 	default:
