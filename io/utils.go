@@ -43,6 +43,28 @@ func IsJSON(filename string, data []byte) bool {
 	*/
 }
 
+func IsXML(filename string, data []byte) bool {
+
+	if strings.HasSuffix(filename, ".xml") {
+		return true
+	}
+
+	return data[0] == byte('<')
+
+	// FIXME not robust agains leading and trailing whitespace characters
+	/*
+		if data[0] == byte('[') && data[len(data)-1] == byte(']') {
+			return true
+		}
+
+		if data[0] == byte('{') && data[len(data)-1] == byte('}') {
+			return true
+		}
+
+		return false
+	*/
+}
+
 // FIXME convert to data []byte from local file
 func GetDocumentType(file string) string {
 	switch filepath.Ext(file) {

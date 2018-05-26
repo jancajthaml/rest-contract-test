@@ -19,6 +19,7 @@ import (
 	"bytes"
 
 	"encoding/json"
+	"encoding/xml"
 
 	yaml "github.com/advance512/yaml" // INFO .regex support
 	//yaml "gopkg.in/yaml.v2"
@@ -85,6 +86,23 @@ func ReadFileContents(filePath string) ([]byte, error) {
 			return b, nil
 		}
 	}
+
+	if gio.IsXML(filePath, fileContentsArray) {
+		var body interface{}
+		if err := xml.Unmarshal(fileContentsArray, &body); err != nil {
+			return nil, err
+		}
+
+		body = untypedConvert(body)
+		if b, err := yaml.Marshal(body); err != nil {
+			return nil, err
+		} else {
+			b = append([]byte("\n"), b...)
+			return b, nil
+		}
+	}
+
+	//encoding/xml
 
 	return fileContentsArray, nil
 }

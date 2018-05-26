@@ -1,5 +1,7 @@
 package v10
 
+import "fmt"
+
 type NamedParameter struct {
 	Name        string
 	DisplayName string `yaml:"displayName"`
@@ -52,19 +54,86 @@ type DefinitionChoice struct {
 	Parameters map[interface{}]interface{}
 }
 
-func (dc *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) error {
+type Schemas struct {
+	Data map[string]interface{}
+}
 
+func (dc *Schemas) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	dc.Data = make(map[string]interface{})
+
+	if err = unmarshaler(dc.Data); err == nil {
+		return
+	}
+
+	legacy := make([]map[string]interface{}, 0)
+	if err = unmarshaler(legacy); err == nil {
+		for _, subset := range legacy {
+			for k, v := range subset {
+				dc.Data[k] = v
+			}
+		}
+
+		return
+	}
+
+	return
+}
+
+type BaseURI struct {
+	Data string
+}
+
+func (ref *BaseURI) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	if err = unmarshaler(ref.Data); err == nil {
+		return
+	}
+
+	legacy := make(map[string]interface{})
+	if err = unmarshaler(legacy); err == nil {
+		// FIXME check for key
+		ref.Data = legacy["value"].(string)
+		return
+	}
+
+	return
+}
+
+type MediaType struct {
+	Data []string
+}
+
+func (ref *MediaType) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	//fmt.Println("before simple")
+	var simple string
+	if err = unmarshaler(simple); err == nil {
+		//fmt.Println("after simple ok")
+		ref.Data = make([]string, 1)
+		ref.Data[0] = simple
+		return
+	}
+
+	fmt.Println("before complex")
+	if err = unmarshaler(&(ref.Data)); err == nil {
+		fmt.Println("after complex ok")
+		return
+	}
+
+	fmt.Println("fail")
+	return
+}
+
+func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) error {
 	simpleDefinition := new(interface{})
 	parameterizedDefinition := make(map[interface{}]map[interface{}]interface{})
 
 	var err error
 	if err = unmarshaler(simpleDefinition); err == nil {
-		dc.Name = *simpleDefinition
-		dc.Parameters = nil
+		ref.Name = *simpleDefinition
+		ref.Parameters = nil
 	} else if err = unmarshaler(parameterizedDefinition); err == nil {
 		for choice, params := range parameterizedDefinition {
-			dc.Name = choice
-			dc.Parameters = params
+			ref.Name = choice
+			ref.Parameters = params
 		}
 	}
 
@@ -165,16 +234,18 @@ type APIDefinition struct {
 	RAMLVersion       string                    `yaml:"raml_version"`
 	Title             string                    `yaml:"title"`
 	Version           string                    `yaml:"version"`
-	BaseUri           string                    `yaml:"baseUri"`
+	BaseUri           *BaseURI                  `yaml:"baseUri"`
 	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"`
 	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
-	Protocols         []string                  `yaml:"protocols"`
-	MediaType         string                    `yaml:"mediaType"`
-	Schemas           map[string]interface{}    `yaml:"schemas"` // FIXME there is a difference betwix 0.8 and 1.0 make universal for 0.8 and 1.0
+	Protocols         []string                  `yaml:"protocols"` // FIXME can be slice or simple string
+	MediaType         *MediaType                `yaml:"mediaType"` // FIXME universal for 0.8 and 1.0
+	Schemas           *Schemas                  `yaml:"schemas"`   // FIXME this is universal for both v08 and v10
 	SecuritySchemes   map[string]SecurityScheme `yaml:"securitySchemes"`
 	SecuredBy         []DefinitionChoice        `yaml:"securedBy"`
 	Documentation     []Documentation           `yaml:"documentation"`
-	Traits            []map[string]Trait        `yaml:"traits"`
-	ResourceTypes     []map[string]ResourceType `yaml:"resourceTypes"`
-	Resources         map[string]Resource       `yaml:",regexp:/.*"`
+
+	Traits        []map[string]Trait        `yaml:"traits"`        // FIXME not so simple :-)
+	ResourceTypes []map[string]ResourceType `yaml:"resourceTypes"` // FIXME not so simple :-)
+
+	Resources map[string]Resource `yaml:",regexp:/.*"`
 }

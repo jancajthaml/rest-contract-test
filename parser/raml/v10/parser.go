@@ -49,7 +49,7 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 
 	err = yaml.Unmarshal(preprocessedContentsBytes, apiDefinition)
 	if err != nil {
-		//fmt.Println(string(preprocessedContentsBytes))
+		fmt.Println(string(preprocessedContentsBytes))
 		return nil, err
 	}
 
