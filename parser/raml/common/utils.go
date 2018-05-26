@@ -67,7 +67,10 @@ func ReadFileContents(filePath string) ([]byte, error) {
 	// FIXME now determine if source file is json or yaml, currently working expecting yaml
 
 	// INFO test if included file is a json maybe separate to its own function
-	if gio.IsJSON(fileContentsArray) {
+
+	//fmt.Printf("%s is json? %t\n", filePath, gio.IsJSON(fileContentsArray))
+
+	if gio.IsJSON(filePath, fileContentsArray) {
 
 		var body interface{}
 		if err := json.Unmarshal(fileContentsArray, &body); err != nil {

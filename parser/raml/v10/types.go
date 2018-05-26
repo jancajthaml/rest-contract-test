@@ -1,4 +1,4 @@
-package v08
+package v10
 
 type NamedParameter struct {
 	Name        string
@@ -162,19 +162,19 @@ type Resource struct {
 }
 
 type APIDefinition struct {
-	RAMLVersion       string                      `yaml:"raml_version"`
-	Title             string                      `yaml:"title"`
-	Version           string                      `yaml:"version"`
-	BaseUri           string                      `yaml:"baseUri"`
-	BaseUriParameters map[string]NamedParameter   `yaml:"baseUriParameters"`
-	UriParameters     map[string]NamedParameter   `yaml:"uriParameters"`
-	Protocols         []string                    `yaml:"protocols"`
-	MediaType         string                      `yaml:"mediaType"`
-	Schemas           []map[string]interface{}    `yaml:"schemas"`
-	SecuritySchemes   []map[string]SecurityScheme `yaml:"securitySchemes"`
-	SecuredBy         []DefinitionChoice          `yaml:"securedBy"`
-	Documentation     []Documentation             `yaml:"documentation"`
-	Traits            []map[string]Trait          `yaml:"traits"`
-	ResourceTypes     []map[string]ResourceType   `yaml:"resourceTypes"`
-	Resources         map[string]Resource         `yaml:",regexp:/.*"`
+	RAMLVersion       string                    `yaml:"raml_version"`
+	Title             string                    `yaml:"title"`
+	Version           string                    `yaml:"version"`
+	BaseUri           string                    `yaml:"baseUri"`
+	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"`
+	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
+	Protocols         []string                  `yaml:"protocols"`
+	MediaType         string                    `yaml:"mediaType"`
+	Schemas           map[string]interface{}    `yaml:"schemas"` // FIXME there is a difference betwix 0.8 and 1.0 make universal for 0.8 and 1.0
+	SecuritySchemes   map[string]SecurityScheme `yaml:"securitySchemes"`
+	SecuredBy         []DefinitionChoice        `yaml:"securedBy"`
+	Documentation     []Documentation           `yaml:"documentation"`
+	Traits            []map[string]Trait        `yaml:"traits"`
+	ResourceTypes     []map[string]ResourceType `yaml:"resourceTypes"`
+	Resources         map[string]Resource       `yaml:",regexp:/.*"`
 }

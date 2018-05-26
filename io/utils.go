@@ -21,18 +21,26 @@ import (
 	"strings"
 )
 
-func IsJSON(data []byte) bool {
+func IsJSON(filename string, data []byte) bool {
+
+	if strings.HasSuffix(filename, ".json") {
+		return true
+	}
+
+	return data[0] == byte('{') || data[0] == byte('[')
+
 	// FIXME not robust agains leading and trailing whitespace characters
+	/*
+		if data[0] == byte('[') && data[len(data)-1] == byte(']') {
+			return true
+		}
 
-	if data[0] == byte('[') && data[len(data)-1] == byte(']') {
-		return true
-	}
+		if data[0] == byte('{') && data[len(data)-1] == byte('}') {
+			return true
+		}
 
-	if data[0] == byte('{') && data[len(data)-1] == byte('}') {
-		return true
-	}
-
-	return false
+		return false
+	*/
 }
 
 // FIXME convert to data []byte from local file

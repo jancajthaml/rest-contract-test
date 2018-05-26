@@ -19,7 +19,6 @@ import (
 
 	"github.com/codegangsta/cli"
 
-	"github.com/jancajthaml/rest-contract-test/model"
 	"github.com/jancajthaml/rest-contract-test/parser"
 )
 
@@ -29,10 +28,8 @@ func CmdTest(c *cli.Context) error {
 		return fmt.Errorf("no resource provided")
 	}
 
-	contract := new(model.Contract)
-
 	// FIXME determine if resource is url or local file
-	err := parser.FromFile(contract, resource)
+	contract, err := parser.FromFile(resource)
 	if err != nil {
 		return err
 	}

@@ -56,9 +56,11 @@ package:
 
 .PHONY: verify
 verify:
+	@echo "\nRAML 0.4"
+	@echo "not implemented"
 	@echo "\nRAML 0.8"
 	@find ./bin -type f -name "darwin*" -exec ./{} test spec/raml/v08/api.raml \;
 	@echo "\nRAML 1.0"
-	@echo "not implemented"
+	@find ./bin -type f -name "darwin*" -exec ./{} test spec/raml/v10/api.raml \;
 	@echo "\nRAML 2.0"
 	@echo "not implemented"

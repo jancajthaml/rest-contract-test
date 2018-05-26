@@ -24,124 +24,38 @@ import (
 	"github.com/jancajthaml/rest-contract-test/parser/raml/v10"
 )
 
-func fillResponses(method *v08.Method) []model.Response {
-	// FIXME TBD
-	return nil
-}
-
-func fillRequest(method *v08.Method) model.Request {
-	// FIXME TBD
-	return model.Request{}
-}
-
-func appendEndpoint(contract *model.Contract, path, method string) {
-	res := model.Endpoint{
-		Path:   path,
-		Method: method,
-		//Responses: fillResponses(endpoint),
-		//Headers:   "",
-		//Request:   fillRequest(endpoint),
-	}
-
-	contract.Endpoints = append(contract.Endpoints, res)
-}
-
-func extractMethods(contract *model.Contract, path string, resource *v08.Resource) {
-	var foundSome = false
-
-	if resource.Get != nil {
-		appendEndpoint(contract, path, "GET")
-		foundSome = true
-	}
-
-	if resource.Head != nil {
-		appendEndpoint(contract, path, "HEAD")
-		foundSome = true
-	}
-
-	if resource.Post != nil {
-		appendEndpoint(contract, path, "POST")
-		foundSome = true
-	}
-
-	if resource.Put != nil {
-		appendEndpoint(contract, path, "PUT")
-		foundSome = true
-	}
-
-	if resource.Patch != nil {
-		appendEndpoint(contract, path, "PATCH")
-		foundSome = true
-	}
-
-	if resource.Delete != nil {
-		appendEndpoint(contract, path, "DELETE")
-		foundSome = true
-	}
-
-	if foundSome {
-		return
-	}
-
-	appendEndpoint(contract, path, "GET")
-}
-
-func walk(contract *model.Contract, path string, resource *v08.Resource) {
-	extractMethods(contract, path, resource)
-
-	for k, v := range resource.Nested {
-		walk(contract, path+k, v)
-	}
-}
-
-func FromFile(contract *model.Contract, file string) error {
-
-	contract.Source = file
+func FromFile(file string) (*model.Contract, error) {
 
 	switch io.GetDocumentType(file) {
 
 	// INFO not implemented
 	case "RAML 0.4":
-		contract.Type = "RAML 0.4"
-
 		_, err := v04.RAMLv04(file)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return nil
+		return nil, nil
 
 	case "RAML 0.8":
-		contract.Type = "RAML 0.8"
-
-		rootResource, err := v08.RAMLv08(file)
+		contract, err := v08.RAMLv08(file)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		contract.Name = rootResource.Title
-
-		for path, v := range rootResource.Resources {
-			walk(contract, path, &v)
-		}
-
-		return nil
+		return contract, nil
 
 	// INFO not implemented
 	case "RAML 1.0":
-		contract.Type = "RAML 1.0"
-
-		_, err := v10.RAMLv10(file)
+		contract, err := v10.RAMLv10(file)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return nil
+		return contract, nil
 
 	default:
-		contract.Type = "Invalid"
+		return nil, fmt.Errorf("unsupported document")
 
-		return fmt.Errorf("unsupported document")
 	}
-
 }
