@@ -58,7 +58,7 @@ services:
   fetch:
     extends: go
     entrypoint: ["dep"]
-    command: ["ensure", "-add", "github.com/codegangsta/cli"]
+    command: ["ensure", "-add", "gopkg.in/yaml.v2"]
 
   # -------------------------------------------------------------------------- #
 

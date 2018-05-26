@@ -15,65 +15,133 @@
 package parser
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-	"io"
+	"fmt"
+
+	"github.com/jancajthaml/rest-contract-test/io"
+	"github.com/jancajthaml/rest-contract-test/model"
+	"github.com/jancajthaml/rest-contract-test/parser/raml/v04"
+	"github.com/jancajthaml/rest-contract-test/parser/raml/v08"
+	"github.com/jancajthaml/rest-contract-test/parser/raml/v10"
 )
 
-func GetDocumentType(file string) string {
-	switch filepath.Ext(file) {
+func fillResponses(method *v08.Method) []model.Response {
+	// FIXME TBD
+	return nil
+}
 
-	case ".raml":
-		// raml versions: { 0.8, 1.0, 2.0 }
-		return "RAML " + getRamlVersion(file)
+func fillRequest(method *v08.Method) model.Request {
+	// FIXME TBD
+	return model.Request{}
+}
 
-	case ".json", ".yaml", ".yml":
-		// https://github.com/OAI/OpenAPI-Specification
-		// https://github.com/BigstickCarpet/swagger-parser
-		// https://github.com/go-swagger/go-swagger
-		// swagger versions: { 1.0, 1.1, 1.2, 2.0, 3.0, 3.1 }
-		return ""
+func appendEndpoint(contract *model.Contract, path, method string) {
+	res := model.Endpoint{
+		Path:   path,
+		Method: method,
+		//Responses: fillResponses(endpoint),
+		//Headers:   "",
+		//Request:   fillRequest(endpoint),
+	}
 
-	default:
-		return ""
+	contract.Endpoints = append(contract.Endpoints, res)
+}
 
+func extractMethods(contract *model.Contract, path string, resource *v08.Resource) {
+	var foundSome = false
+
+	if resource.Get != nil {
+		appendEndpoint(contract, path, "GET")
+		foundSome = true
+	}
+
+	if resource.Head != nil {
+		appendEndpoint(contract, path, "HEAD")
+		foundSome = true
+	}
+
+	if resource.Post != nil {
+		appendEndpoint(contract, path, "POST")
+		foundSome = true
+	}
+
+	if resource.Put != nil {
+		appendEndpoint(contract, path, "PUT")
+		foundSome = true
+	}
+
+	if resource.Patch != nil {
+		appendEndpoint(contract, path, "PATCH")
+		foundSome = true
+	}
+
+	if resource.Delete != nil {
+		appendEndpoint(contract, path, "DELETE")
+		foundSome = true
+	}
+
+	if foundSome {
+		return
+	}
+
+	appendEndpoint(contract, path, "GET")
+}
+
+func walk(contract *model.Contract, path string, resource *v08.Resource) {
+	extractMethods(contract, path, resource)
+
+	for k, v := range resource.Nested {
+		walk(contract, path+k, v)
 	}
 }
 
-func getRamlVersion(file string) string {
+func FromFile(contract *model.Contract, file string) error {
 
-	// FIXME RAML below
-	f, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
-	if err != nil {
-		return ""
-	}
-	defer f.Close()
+	contract.Source = file
 
-	fi, err := f.Stat()
-	if err != nil {
-		return ""
-	}
+	switch io.GetDocumentType(file) {
 
-	size := fi.Size()
-	if size > 20 {
-		size = 20
-	}
-	buf := make([]byte, size)
-	_, err = f.Read(buf)
-	if err != nil && err != io.EOF {
-		return ""
-	}
+	// INFO not implemented
+	case "RAML 0.4":
+		contract.Type = "RAML 0.4"
 
-	switch strings.Split(string(buf), "\n")[0] { // FIXME
+		_, err := v04.RAMLv04(file)
+		if err != nil {
+			return err
+		}
 
-	case "#%RAML 0.8":
-		return "0.8"
+		return nil
 
-	case "#%RAML 1.0":
-		return "1.0"
+	case "RAML 0.8":
+		contract.Type = "RAML 0.8"
+
+		rootResource, err := v08.RAMLv08(file)
+		if err != nil {
+			return err
+		}
+
+		contract.Name = rootResource.Title
+
+		for path, v := range rootResource.Resources {
+			walk(contract, path, &v)
+		}
+
+		return nil
+
+	// INFO not implemented
+	case "RAML 1.0":
+		contract.Type = "RAML 1.0"
+
+		_, err := v10.RAMLv10(file)
+		if err != nil {
+			return err
+		}
+
+		return nil
 
 	default:
-		return ""
+		contract.Type = "Invalid"
+
+		return fmt.Errorf("unsupported document")
 	}
+
 }

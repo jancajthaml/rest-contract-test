@@ -9,3 +9,7 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/tsaikd/go-raml-parser"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.1"
