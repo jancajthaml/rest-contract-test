@@ -1,4 +1,18 @@
-package v10
+// Copyright (c) 2016-2018, Jan Cajthaml <jan.cajthaml@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package raml
 
 import (
 	"bytes"
@@ -7,7 +21,6 @@ import (
 	"path/filepath"
 
 	"github.com/jancajthaml/rest-contract-test/model"
-	"github.com/jancajthaml/rest-contract-test/parser/raml/common"
 
 	yaml "github.com/advance512/yaml" // INFO .regex support
 	//yaml "gopkg.in/yaml.v2"
@@ -15,7 +28,7 @@ import (
 
 func ParseFile(filePath string) (*APIDefinition, error) {
 
-	mainFileBytes, err := common.ReadFileContents(filePath)
+	mainFileBytes, err := ReadFileContents(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -31,21 +44,20 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 			ramlVersion = firstLine[:10]
 		}
 
-		if ramlVersion != "#%RAML 1.0" {
-			return nil, errors.New("Input file is not a RAML 1.0 file. Make " +
-				"sure the file starts with #%RAML 1.0")
+		if ramlVersion != "#%RAML 1.0" && ramlVersion != "#%RAML 0.8" {
+			return nil, errors.New("Resource is not RAML 0.8 or 1.0")
 		}
 	}
 
 	workingDirectory, _ := filepath.Split(filePath)
-	preprocessedContentsBytes, err := common.PreProcess(mainFileBuffer, workingDirectory)
+	preprocessedContentsBytes, err := PreProcess(mainFileBuffer, workingDirectory)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error preprocessing RAML file (Error: %s)", err.Error())
 	}
 
 	apiDefinition := new(APIDefinition)
-	apiDefinition.RAMLVersion = ramlVersion
+	apiDefinition.RAMLVersion = ramlVersion[2:]
 
 	err = yaml.Unmarshal(preprocessedContentsBytes, apiDefinition)
 	if err != nil {
@@ -56,9 +68,9 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 	return apiDefinition, nil
 }
 
-func RAMLv10(file string) (*model.Contract, error) {
+func NewRAML(file string) (*model.Contract, error) {
 	contract := new(model.Contract)
-	contract.Type = "RAML 1.0"
+
 	contract.Source = file
 
 	rootResource, err := ParseFile(file)
@@ -71,6 +83,8 @@ func RAMLv10(file string) (*model.Contract, error) {
 	for path, v := range rootResource.Resources {
 		walk(contract, path, &v)
 	}
+
+	contract.Type = rootResource.RAMLVersion
 
 	return contract, nil
 }

@@ -19,35 +19,23 @@ import (
 
 	"github.com/jancajthaml/rest-contract-test/io"
 	"github.com/jancajthaml/rest-contract-test/model"
-	"github.com/jancajthaml/rest-contract-test/parser/raml/v04"
-	"github.com/jancajthaml/rest-contract-test/parser/raml/v08"
-	"github.com/jancajthaml/rest-contract-test/parser/raml/v10"
+	"github.com/jancajthaml/rest-contract-test/parser/raml"
 )
 
 func FromFile(file string) (*model.Contract, error) {
 
 	switch io.GetDocumentType(file) {
 
-	// INFO not implemented
-	case "RAML 0.4":
-		_, err := v04.RAMLv04(file)
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, nil
-
 	case "RAML 0.8":
-		contract, err := v08.RAMLv08(file)
+		contract, err := raml.NewRAML(file)
 		if err != nil {
 			return nil, err
 		}
 
 		return contract, nil
 
-	// INFO not implemented
 	case "RAML 1.0":
-		contract, err := v10.RAMLv10(file)
+		contract, err := raml.NewRAML(file)
 		if err != nil {
 			return nil, err
 		}

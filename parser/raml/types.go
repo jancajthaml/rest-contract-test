@@ -1,6 +1,18 @@
-package v10
+// Copyright (c) 2016-2018, Jan Cajthaml <jan.cajthaml@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-import "fmt"
+package raml
 
 type NamedParameter struct {
 	Name        string
@@ -34,6 +46,16 @@ type Body struct {
 }
 
 type Bodies struct {
+	Referenced            *string
+	DefaultSchema         interface{}               `yaml:"schema"`
+	DefaultDescription    string                    `yaml:"description"`
+	DefaultExample        interface{}               `yaml:"example"`
+	DefaultFormParameters map[string]NamedParameter `yaml:"formParameters"`
+	Headers               map[string]NamedParameter `yaml:"headers"`
+	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
+}
+
+type LiteralBodies struct {
 	DefaultSchema         interface{}               `yaml:"schema"`
 	DefaultDescription    string                    `yaml:"description"`
 	DefaultExample        interface{}               `yaml:"example"`
@@ -63,15 +85,17 @@ type Traits struct {
 }
 
 func (dc *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	// FIXME support slice of schemas now it only uses the first schema
+
 	dc.Data = make(map[string]interface{})
 
 	if err = unmarshaler(dc.Data); err == nil {
 		return
 	}
 
-	legacy := make([]map[string]interface{}, 0)
-	if err = unmarshaler(legacy); err == nil {
-		for _, subset := range legacy {
+	data := make([]map[string]interface{}, 0)
+	if err = unmarshaler(&data); err == nil {
+		for _, subset := range data {
 			for k, v := range subset {
 				dc.Data[k] = v
 			}
@@ -83,22 +107,45 @@ func (dc *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error)
 	return
 }
 
+func (ref *Bodies) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	literal := new(LiteralBodies)
+	if err = unmarshaler(literal); err == nil {
+		ref.DefaultSchema = literal.DefaultSchema
+		ref.DefaultDescription = literal.DefaultDescription
+		ref.DefaultExample = literal.DefaultExample
+		ref.DefaultFormParameters = literal.DefaultFormParameters
+		ref.Headers = literal.Headers
+		ref.ForMIMEType = literal.ForMIMEType
+		return
+	}
+
+	data := new(string)
+	if err = unmarshaler(data); err == nil {
+		ref.Referenced = data
+		return
+	}
+
+	return
+}
+
 type ResourceTypes struct {
 	Data map[string]interface{}
 }
 
-func (dc *ResourceTypes) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	dc.Data = make(map[string]interface{})
+func (ref *ResourceTypes) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	// FIXME support slice of schemas now it only uses the first schema
 
-	if err = unmarshaler(dc.Data); err == nil {
+	ref.Data = make(map[string]interface{})
+
+	if err = unmarshaler(ref.Data); err == nil {
 		return
 	}
 
-	legacy := make([]map[string]interface{}, 0)
-	if err = unmarshaler(legacy); err == nil {
-		for _, subset := range legacy {
+	data := make([]map[string]interface{}, 0)
+	if err = unmarshaler(&data); err == nil {
+		for _, subset := range data {
 			for k, v := range subset {
-				dc.Data[k] = v
+				ref.Data[k] = v
 			}
 		}
 
@@ -112,18 +159,20 @@ type Schemas struct {
 	Data map[string]interface{}
 }
 
-func (dc *Schemas) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	dc.Data = make(map[string]interface{})
+func (ref *Schemas) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	// FIXME support slice of schemas now it only uses the first schema
 
-	if err = unmarshaler(dc.Data); err == nil {
+	ref.Data = make(map[string]interface{})
+
+	if err = unmarshaler(ref.Data); err == nil {
 		return
 	}
 
-	legacy := make([]map[string]interface{}, 0)
-	if err = unmarshaler(legacy); err == nil {
-		for _, subset := range legacy {
+	data := make([]map[string]interface{}, 0)
+	if err = unmarshaler(&data); err == nil {
+		for _, subset := range data {
 			for k, v := range subset {
-				dc.Data[k] = v
+				ref.Data[k] = v
 			}
 		}
 
@@ -138,14 +187,15 @@ type BaseURI struct {
 }
 
 func (ref *BaseURI) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	if err = unmarshaler(ref.Data); err == nil {
+	simple := new(string)
+	if err = unmarshaler(simple); err == nil {
+		ref.Data = *simple
 		return
 	}
-
-	legacy := make(map[string]interface{})
-	if err = unmarshaler(legacy); err == nil {
+	composite := make(map[string]interface{})
+	if err = unmarshaler(composite); err == nil {
 		// FIXME check for key
-		ref.Data = legacy["value"].(string)
+		ref.Data = composite["value"].(string)
 		return
 	}
 
@@ -179,13 +229,9 @@ func (ref *DefinitionSlice) UnmarshalYAML(unmarshaler func(interface{}) error) (
 		return
 	}
 
-	fmt.Println(err)
-
 	if err = unmarshaler(&(ref.Data)); err == nil {
 		return
 	}
-
-	fmt.Println(err)
 
 	return
 }
@@ -307,8 +353,8 @@ type APIDefinition struct {
 	BaseUri           *BaseURI                  `yaml:"baseUri"`
 	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"`
 	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
-	Protocols         []string                  `yaml:"protocols"` // FIXME can be slice or simple string
-	MediaType         *MediaType                `yaml:"mediaType"` // FIXME universal for 0.8 and 1.0
+	Protocols         []string                  `yaml:"protocols"`
+	MediaType         *MediaType                `yaml:"mediaType"`
 	SecuritySchemes   map[string]SecurityScheme `yaml:"securitySchemes"`
 	SecuredBy         *DefinitionSlice          `yaml:"securedBy"`
 	Documentation     []Documentation           `yaml:"documentation"`

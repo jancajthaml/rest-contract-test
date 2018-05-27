@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package raml
 
 import (
 	"bufio"
@@ -58,23 +58,16 @@ func ReadFileContents(filePath string) ([]byte, error) {
 	}
 
 	// FIXME faster file read
-	fileContentsArray, err := ioutil.ReadFile(filePath)
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil,
-			fmt.Errorf("Could not read file %s (Error: %s)",
-				filePath, err.Error())
+			fmt.Errorf("Could not read file %s (Error: %s)", filePath, err.Error())
 	}
 
-	// FIXME now determine if source file is json or yaml, currently working expecting yaml
-
-	// INFO test if included file is a json maybe separate to its own function
-
-	//fmt.Printf("%s is json? %t\n", filePath, gio.IsJSON(fileContentsArray))
-
-	if gio.IsJSON(filePath, fileContentsArray) {
+	if gio.IsJSON(filePath, data) {
 
 		var body interface{}
-		if err := json.Unmarshal(fileContentsArray, &body); err != nil {
+		if err := json.Unmarshal(data, &body); err != nil {
 			return nil, err
 		}
 
@@ -87,9 +80,9 @@ func ReadFileContents(filePath string) ([]byte, error) {
 		}
 	}
 
-	if gio.IsXML(filePath, fileContentsArray) {
+	if gio.IsXML(filePath, data) {
 		var body interface{}
-		if err := xml.Unmarshal(fileContentsArray, &body); err != nil {
+		if err := xml.Unmarshal(data, &body); err != nil {
 			return nil, err
 		}
 
@@ -102,9 +95,7 @@ func ReadFileContents(filePath string) ([]byte, error) {
 		}
 	}
 
-	//encoding/xml
-
-	return fileContentsArray, nil
+	return data, nil
 }
 
 // FIXME add PostProcess function that resolves references and saturates them in-place
