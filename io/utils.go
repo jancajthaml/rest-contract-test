@@ -73,7 +73,28 @@ func GetDocumentType(file string) string {
 		// raml versions: { 0.8, 1.0, 2.0 }
 		return "RAML " + getRamlVersion(file)
 
-	case ".json", ".yaml", ".yml":
+	case ".json":
+
+		// FIXME try to unmarshall swagger from json
+
+		// swagger v2.0 header: swagger: 2.0
+		// swagger v3.0 header: openapi: 3.0.0
+
+		// https://github.com/OAI/OpenAPI-Specification
+		// https://github.com/BigstickCarpet/swagger-parser
+		// https://github.com/go-swagger/go-swagger
+		// swagger versions: { 1.0, 1.1, 1.2, 2.0, 3.0, 3.1 }
+
+		// FIXME swagger must be json check json
+		return ""
+
+	case ".yaml", ".yml":
+
+		// FIXME try to unmarshall swagger from yml
+
+		// swagger v2.0 header: swagger: 2.0
+		// swagger v3.0 header: openapi: 3.0.0
+
 		// https://github.com/OAI/OpenAPI-Specification
 		// https://github.com/BigstickCarpet/swagger-parser
 		// https://github.com/go-swagger/go-swagger
