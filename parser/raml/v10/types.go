@@ -49,9 +49,63 @@ type Response struct {
 	Bodies      Bodies                    `yaml:"body"`
 }
 
+type DefinitionSlice struct {
+	Data []*DefinitionChoice
+}
+
 type DefinitionChoice struct {
 	Name       interface{}
 	Parameters map[interface{}]interface{}
+}
+
+type Traits struct {
+	Data map[string]interface{}
+}
+
+func (dc *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	dc.Data = make(map[string]interface{})
+
+	if err = unmarshaler(dc.Data); err == nil {
+		return
+	}
+
+	legacy := make([]map[string]interface{}, 0)
+	if err = unmarshaler(legacy); err == nil {
+		for _, subset := range legacy {
+			for k, v := range subset {
+				dc.Data[k] = v
+			}
+		}
+
+		return
+	}
+
+	return
+}
+
+type ResourceTypes struct {
+	Data map[string]interface{}
+}
+
+func (dc *ResourceTypes) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	dc.Data = make(map[string]interface{})
+
+	if err = unmarshaler(dc.Data); err == nil {
+		return
+	}
+
+	legacy := make([]map[string]interface{}, 0)
+	if err = unmarshaler(legacy); err == nil {
+		for _, subset := range legacy {
+			for k, v := range subset {
+				dc.Data[k] = v
+			}
+		}
+
+		return
+	}
+
+	return
 }
 
 type Schemas struct {
@@ -103,34 +157,50 @@ type MediaType struct {
 }
 
 func (ref *MediaType) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	//fmt.Println("before simple")
 	var simple string
 	if err = unmarshaler(simple); err == nil {
-		//fmt.Println("after simple ok")
 		ref.Data = make([]string, 1)
 		ref.Data[0] = simple
 		return
 	}
 
-	fmt.Println("before complex")
 	if err = unmarshaler(&(ref.Data)); err == nil {
-		fmt.Println("after complex ok")
 		return
 	}
 
-	fmt.Println("fail")
 	return
 }
 
-func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) error {
+func (ref *DefinitionSlice) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	simple := new(DefinitionChoice)
+	if err = unmarshaler(simple); err == nil {
+		ref.Data = make([]*DefinitionChoice, 1)
+		ref.Data[0] = simple
+		return
+	}
+
+	fmt.Println(err)
+
+	if err = unmarshaler(&(ref.Data)); err == nil {
+		return
+	}
+
+	fmt.Println(err)
+
+	return
+}
+
+func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
 	simpleDefinition := new(interface{})
 	parameterizedDefinition := make(map[interface{}]map[interface{}]interface{})
 
-	var err error
 	if err = unmarshaler(simpleDefinition); err == nil {
 		ref.Name = *simpleDefinition
 		ref.Parameters = nil
-	} else if err = unmarshaler(parameterizedDefinition); err == nil {
+		return
+	}
+
+	if err = unmarshaler(parameterizedDefinition); err == nil {
 		for choice, params := range parameterizedDefinition {
 			ref.Name = choice
 			ref.Parameters = params
@@ -206,21 +276,21 @@ type SecurityScheme struct {
 type Method struct {
 	Name            string
 	Description     string
-	SecuredBy       []DefinitionChoice        `yaml:"securedBy"`
+	SecuredBy       *DefinitionSlice          `yaml:"securedBy"`
 	Headers         map[string]NamedParameter `yaml:"headers"`
 	Protocols       []string                  `yaml:"protocols"`
 	QueryParameters map[string]NamedParameter `yaml:"queryParameters"`
 	Bodies          Bodies                    `yaml:"body"`
 	Responses       map[int]Response          `yaml:"responses"`
-	Is              []DefinitionChoice        `yaml:"is"`
+	Is              *DefinitionSlice          `yaml:"is"`
 }
 
 type Resource struct {
-	SecuredBy         []DefinitionChoice        `yaml:"securedBy"`
+	SecuredBy         *DefinitionSlice          `yaml:"securedBy"`
 	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"`
 	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
 	Type              *DefinitionChoice         `yaml:"type"`
-	Is                []DefinitionChoice        `yaml:"is"`
+	Is                *DefinitionSlice          `yaml:"is"`
 	Get               *Method                   `yaml:"get"`
 	Head              *Method                   `yaml:"head"`
 	Post              *Method                   `yaml:"post"`
@@ -239,13 +309,14 @@ type APIDefinition struct {
 	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
 	Protocols         []string                  `yaml:"protocols"` // FIXME can be slice or simple string
 	MediaType         *MediaType                `yaml:"mediaType"` // FIXME universal for 0.8 and 1.0
-	Schemas           *Schemas                  `yaml:"schemas"`   // FIXME this is universal for both v08 and v10
 	SecuritySchemes   map[string]SecurityScheme `yaml:"securitySchemes"`
-	SecuredBy         []DefinitionChoice        `yaml:"securedBy"`
+	SecuredBy         *DefinitionSlice          `yaml:"securedBy"`
 	Documentation     []Documentation           `yaml:"documentation"`
 
-	Traits        []map[string]Trait        `yaml:"traits"`        // FIXME not so simple :-)
-	ResourceTypes []map[string]ResourceType `yaml:"resourceTypes"` // FIXME not so simple :-)
+	// FIXME these three are same data structures and thus now redundant
+	Schemas       *Schemas       `yaml:"schemas"`
+	Traits        *Traits        `yaml:"traits"`
+	ResourceTypes *ResourceTypes `yaml:"resourceTypes"`
 
 	Resources map[string]Resource `yaml:",regexp:/.*"`
 }

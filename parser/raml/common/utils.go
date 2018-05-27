@@ -107,6 +107,13 @@ func ReadFileContents(filePath string) ([]byte, error) {
 	return fileContentsArray, nil
 }
 
+// FIXME add PostProcess function that resolves references and saturates them in-place
+// types, schemes everything that is referenced by simple string (name) be that in
+// primitive value of slice of said values
+//
+// also in post-process determine if string in example, body, ... is string literal
+// or string json, xml, yaml and parse it if neccessary
+
 func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, error) {
 
 	var preprocessedContents bytes.Buffer
