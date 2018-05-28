@@ -105,6 +105,26 @@ func ReadFileContents(filePath string) ([]byte, error) {
 // also in post-process determine if string in example, body, ... is string literal
 // or string json, xml, yaml and parse it if neccessary
 
+func PostProcess(rootResource *APIDefinition) {
+	fmt.Println("!!!post processing start")
+
+	//rootResource.RAMLVersion = ">>>" + rootResource.RAMLVersion + "<<<"
+
+	fmt.Println(">>>> extracting data from security schemes")
+
+	// FIXME does not work (is not parsed)
+	for k, v := range rootResource.SecuritySchemes {
+		fmt.Println(k, v.DescribedBy.Headers, v.DescribedBy.QueryParameters)
+	}
+
+	fmt.Println(">>>> extracting data from traits")
+	for k, v := range rootResource.Traits.Data {
+		fmt.Println(k, v.Headers, v.QueryParameters)
+	}
+
+	fmt.Println("!!! post processing done")
+}
+
 func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, error) {
 
 	var preprocessedContents bytes.Buffer

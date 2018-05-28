@@ -20,22 +20,23 @@ import (
 	"github.com/jancajthaml/rest-contract-test/io"
 	"github.com/jancajthaml/rest-contract-test/model"
 	"github.com/jancajthaml/rest-contract-test/parser/raml"
+	"github.com/jancajthaml/rest-contract-test/parser/swagger"
 )
 
 func FromFile(file string) (*model.Contract, error) {
 
 	switch io.GetDocumentType(file) {
 
-	case "RAML 0.8":
-		contract, err := raml.NewRAML(file)
+	case "RAML":
+		contract, err := raml.NewRaml(file)
 		if err != nil {
 			return nil, err
 		}
 
 		return contract, nil
 
-	case "RAML 1.0":
-		contract, err := raml.NewRAML(file)
+	case "SWAGGER":
+		contract, err := swagger.NewSwagger(file)
 		if err != nil {
 			return nil, err
 		}

@@ -44,7 +44,7 @@ types:
     description: |
       This is just another entry to simulate that you can add facets also on JSON
       schema defined types. Although you can only add documentation-based facets.
-  User:
+  Developer:
     properties:
       firstname: string
       lastname:
@@ -53,6 +53,20 @@ types:
         required: false
     example:
       firstname: John
+  User:
+    type: object
+    properties:
+      name: string
+      lastname: string
+    example:
+      name: Bob
+      lastname: Marley
+  Org:
+    type: object
+    properties:
+      name: string
+      address?: string
+      value? : string
 
 traits:
   secured: !include secured/accessToken.trait.raml
@@ -67,12 +81,11 @@ resourceTypes:
             application/json:
               schema: <<resourcePathName|!singularize|!uppercamelcase>>
 
-
 annotationTypes:
   deprecated:
     properties:
       date: datetime
-      deprecatedBy: User
+      deprecatedBy: Developer
       comment: nil | string
   monitoringInterval:
     type: integer
@@ -199,3 +212,32 @@ uses:
             application/xml:
               type: !include schemas/songs.xsd
               example: !include examples/songs.xml
+/organisation:
+  post:
+    headers:
+      UserID:
+        description: the identifier for the user that posts a new organisation
+        type: string
+        example: SWED-123 # single scalar example
+    body:
+      application/json:
+        type: Org
+        example: # single request body example
+          value: # needs to be declared since type contains 'value' property
+            name: Doe Enterprise
+            value: Silver
+  get:
+    description: Returns an organisation entity.
+    responses:
+      201:
+        body:
+          application/json:
+            type: Org
+            examples:
+              acme:
+                name: Acme
+              softwareCorp:
+                value: # validate against the available facets for the map value of an example
+                  name: Software Corp
+                  address: 35 Central Street
+                  value: Gold # validate against instance of the `value` property

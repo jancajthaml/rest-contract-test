@@ -81,19 +81,17 @@ type DefinitionChoice struct {
 }
 
 type Traits struct {
-	Data map[string]interface{}
+	Data map[string]*Trait
 }
 
 func (dc *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	// FIXME support slice of schemas now it only uses the first schema
-
-	dc.Data = make(map[string]interface{})
+	dc.Data = make(map[string]*Trait)
 
 	if err = unmarshaler(dc.Data); err == nil {
 		return
 	}
 
-	data := make([]map[string]interface{}, 0)
+	data := make([]map[string]*Trait, 0)
 	if err = unmarshaler(&data); err == nil {
 		for _, subset := range data {
 			for k, v := range subset {
@@ -133,8 +131,6 @@ type ResourceTypes struct {
 }
 
 func (ref *ResourceTypes) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	// FIXME support slice of schemas now it only uses the first schema
-
 	ref.Data = make(map[string]interface{})
 
 	if err = unmarshaler(ref.Data); err == nil {
@@ -160,8 +156,6 @@ type Schemas struct {
 }
 
 func (ref *Schemas) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	// FIXME support slice of schemas now it only uses the first schema
-
 	ref.Data = make(map[string]interface{})
 
 	if err = unmarshaler(ref.Data); err == nil {
@@ -257,18 +251,18 @@ func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) 
 }
 
 type Trait struct {
-	Name                    string
-	Usage                   string
-	Description             string
-	Bodies                  Bodies                    `yaml:"body"`
-	Headers                 map[string]NamedParameter `yaml:"headers"`
-	Responses               map[int]Response          `yaml:"responses"`
-	QueryParameters         map[string]NamedParameter `yaml:"queryParameters"`
-	Protocols               []string                  `yaml:"protocols"`
-	OptionalBodies          Bodies                    `yaml:"body?"`
-	OptionalHeaders         map[string]NamedParameter `yaml:"headers?"`
-	OptionalResponses       map[int]Response          `yaml:"responses?"`
-	OptionalQueryParameters map[string]NamedParameter `yaml:"queryParameters?"`
+	//Name                    string
+	//Usage                   interface{}
+	//Description             string
+	Bodies                  Bodies                 `yaml:"body"`
+	Headers                 map[string]interface{} `yaml:"headers"`
+	Responses               map[int]Response       `yaml:"responses"`
+	QueryParameters         map[string]interface{} `yaml:"queryParameters"`
+	Protocols               []string               `yaml:"protocols"`
+	OptionalBodies          Bodies                 `yaml:"body?"`
+	OptionalHeaders         map[string]interface{} `yaml:"headers?"`
+	OptionalResponses       map[int]Response       `yaml:"responses?"`
+	OptionalQueryParameters map[string]interface{} `yaml:"queryParameters?"`
 }
 
 type ResourceTypeMethod struct {

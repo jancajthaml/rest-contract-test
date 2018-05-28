@@ -15,8 +15,6 @@
 package io
 
 import (
-	"io"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -71,7 +69,9 @@ func GetDocumentType(file string) string {
 
 	case ".raml":
 		// raml versions: { 0.8, 1.0, 2.0 }
-		return "RAML " + getRamlVersion(file)
+		return "RAML" // + getRamlVersion(file)
+
+	// https://github.com/yvasiyarov/swagger/tree/master/parser
 
 	case ".json":
 
@@ -86,7 +86,7 @@ func GetDocumentType(file string) string {
 		// swagger versions: { 1.0, 1.1, 1.2, 2.0, 3.0, 3.1 }
 
 		// FIXME swagger must be json check json
-		return ""
+		return "SWAGGER"
 
 	case ".yaml", ".yml":
 
@@ -101,7 +101,7 @@ func GetDocumentType(file string) string {
 		// swagger versions: { 1.0, 1.1, 1.2, 2.0, 3.0, 3.1 }
 
 		// FIXME swagger must be json check json
-		return ""
+		return "SWAGGER"
 
 	default:
 		return ""
@@ -109,6 +109,7 @@ func GetDocumentType(file string) string {
 	}
 }
 
+/*
 func getRamlVersion(resource string) string {
 
 	// FIXME assuming that resource is local file
@@ -150,4 +151,4 @@ func getRamlVersion(resource string) string {
 	default:
 		return ""
 	}
-}
+}*/

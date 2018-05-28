@@ -65,10 +65,12 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 		return nil, err
 	}
 
+	PostProcess(apiDefinition)
+
 	return apiDefinition, nil
 }
 
-func NewRAML(file string) (*model.Contract, error) {
+func NewRaml(file string) (*model.Contract, error) {
 	contract := new(model.Contract)
 
 	contract.Source = file
@@ -99,7 +101,38 @@ func fillRequest(method *Method) model.Request {
 	return model.Request{}
 }
 
-func appendEndpoint(contract *model.Contract, path, method string) {
+func extractMethods(contract *model.Contract, path string, resource *Resource) {
+	var method = ""
+
+	if resource.Get != nil {
+		method = "GET"
+		fmt.Println(resource.Get.Headers)
+	}
+
+	if resource.Head != nil {
+		method = "HEAD"
+	}
+
+	if resource.Post != nil {
+		method = "POST"
+	}
+
+	if resource.Put != nil {
+		method = "PUT"
+	}
+
+	if resource.Patch != nil {
+		method = "PATCH"
+	}
+
+	if resource.Delete != nil {
+		method = "DELETE"
+	}
+
+	if len(method) == 0 {
+		method = "GET"
+	}
+
 	res := model.Endpoint{
 		Path:   path,
 		Method: method,
@@ -109,46 +142,6 @@ func appendEndpoint(contract *model.Contract, path, method string) {
 	}
 
 	contract.Endpoints = append(contract.Endpoints, res)
-}
-
-func extractMethods(contract *model.Contract, path string, resource *Resource) {
-	var foundSome = false
-
-	if resource.Get != nil {
-		appendEndpoint(contract, path, "GET")
-		foundSome = true
-	}
-
-	if resource.Head != nil {
-		appendEndpoint(contract, path, "HEAD")
-		foundSome = true
-	}
-
-	if resource.Post != nil {
-		appendEndpoint(contract, path, "POST")
-		foundSome = true
-	}
-
-	if resource.Put != nil {
-		appendEndpoint(contract, path, "PUT")
-		foundSome = true
-	}
-
-	if resource.Patch != nil {
-		appendEndpoint(contract, path, "PATCH")
-		foundSome = true
-	}
-
-	if resource.Delete != nil {
-		appendEndpoint(contract, path, "DELETE")
-		foundSome = true
-	}
-
-	if foundSome {
-		return
-	}
-
-	appendEndpoint(contract, path, "GET")
 }
 
 func walk(contract *model.Contract, path string, resource *Resource) {
