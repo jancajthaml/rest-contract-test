@@ -135,6 +135,52 @@ type NamedParameter struct {
 }
 */
 
+func populateMethodsQueryStrings(resource *Resource, security map[string]map[string]string, traits map[string]map[string]string) {
+	//populateMethods(contract, path, resource)
+
+	//var method = ""
+
+	if resource.Get != nil {
+		//method = "GET"
+		fmt.Println(resource.Get.QueryParameters)
+		fmt.Println(resource.Get.Is)
+	}
+
+	if resource.Head != nil {
+		//method = "HEAD"
+		fmt.Println(resource.Head.QueryParameters)
+		fmt.Println(resource.Head.Is)
+	}
+
+	if resource.Post != nil {
+		//method = "POST"
+		fmt.Println(resource.Post.QueryParameters)
+		fmt.Println(resource.Post.Is)
+	}
+
+	if resource.Put != nil {
+		//method = "PUT"
+		fmt.Println(resource.Put.QueryParameters)
+		fmt.Println(resource.Put.Is)
+	}
+
+	if resource.Patch != nil {
+		//method = "PATCH"
+		fmt.Println(resource.Patch.QueryParameters)
+		fmt.Println(resource.Patch.Is)
+	}
+
+	if resource.Delete != nil {
+		//method = "DELETE"
+		fmt.Println(resource.Delete.QueryParameters)
+		fmt.Println(resource.Delete.Is)
+	}
+
+	for _, v := range resource.Nested {
+		populateMethodsQueryStrings(v, security, traits)
+	}
+}
+
 func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]map[string]string {
 	result := make(map[string]map[string]string)
 
@@ -158,15 +204,15 @@ func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]m
 					}
 				} else if parameter.Enum != nil {
 					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} /*else if parameter.Type != nil {
+				} else if parameter.Type != nil {
 					// FIXME now need to generate value based by validations and type
 					switch typed := parameter.Type.(type) {
 					case string:
-						queryParamsSecurity[name] = typed
+						placeholder[name] = typed
 					case int:
-						queryParamsSecurity[name] = strconv.Itoa(typed)
+						placeholder[name] = strconv.Itoa(typed)
 					}
-				}*/
+				}
 			}
 			if len(placeholder) != 0 {
 				result[k] = placeholder
@@ -204,15 +250,15 @@ func populateTraitQueryParams(dataset map[string]*Trait) map[string]map[string]s
 					}
 				} else if parameter.Enum != nil {
 					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} /* else if parameter.Type != nil {
+				} else if parameter.Type != nil {
 					switch typed := parameter.Type.(type) {
 					case string:
-						queryParamsTraits[name] = typed
+						placeholder[name] = typed
 					case int:
-						queryParamsTraits[name] = strconv.Itoa(typed)
+						placeholder[name] = strconv.Itoa(typed)
 					}
 					// FIXME now need to generate value based by validations and type
-				}*/
+				}
 			}
 			if len(placeholder) != 0 {
 				result[k] = placeholder
@@ -224,7 +270,7 @@ func populateTraitQueryParams(dataset map[string]*Trait) map[string]map[string]s
 }
 
 func PostProcess(rootResource *APIDefinition) {
-	fmt.Println("!!! post processing start !!!")
+	//fmt.Println("!!! post processing start !!!")
 
 	//queryParamsTraits := make(map[string]string)
 
@@ -232,23 +278,28 @@ func PostProcess(rootResource *APIDefinition) {
 
 	// FIXME deduplicate
 
-	//queryParamsSecurity := populateSecurityQueryParams(rootResource.SecuritySchemes)
-	//queryParamsTraits := populateTraitQueryParams(rootResource.Traits.Data)
-
-	queryParamsSecurity := make(chan map[string]map[string]string)
-	queryParamsTraits := make(chan map[string]map[string]string)
+	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
+	eventualQueryParamsTraits := make(chan map[string]map[string]string)
 
 	go func() {
-		queryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
+		eventualQueryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
 	}()
 	go func() {
-		queryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
+		eventualQueryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
 	}()
 
-	fmt.Println("queryParams security :", <-queryParamsSecurity)
-	fmt.Println("queryParams traits   :", <-queryParamsTraits)
+	//fmt.Println("queryParams security :", <-queryParamsSecurity)
+	//fmt.Println("queryParams traits   :", <-queryParamsTraits)
 
-	fmt.Println("!!! post processing done !!!")
+	queryParamsSecurity := <-eventualQueryParamsSecurity
+	queryParamsTraits := <-eventualQueryParamsTraits
+
+	for _, v := range rootResource.Resources {
+		populateMethodsQueryStrings(&v, queryParamsSecurity, queryParamsTraits)
+	}
+
+	//populateMethodsQueryStrings(<-queryParamsSecurity, <-queryParamsTraits)
+	//fmt.Println("!!! post processing done !!!")
 }
 
 func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, error) {

@@ -106,7 +106,7 @@ func extractMethods(contract *model.Contract, path string, resource *Resource) {
 
 	if resource.Get != nil {
 		method = "GET"
-		fmt.Println(resource.Get.Headers)
+		//fmt.Println(resource.Get.Headers)
 	}
 
 	if resource.Head != nil {
