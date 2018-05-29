@@ -138,42 +138,57 @@ type NamedParameter struct {
 func populateMethodsQueryStrings(resource *Resource, security map[string]map[string]string, traits map[string]map[string]string) {
 	//populateMethods(contract, path, resource)
 
+	// INFO "is" is populated by traits
+
 	//var method = ""
 
 	if resource.Get != nil {
 		//method = "GET"
-		fmt.Println(resource.Get.QueryParameters)
-		fmt.Println(resource.Get.Is)
+		//fmt.Println(resource.Get.QueryParameters)
+		if resource.Get.Is != nil {
+			fmt.Println(resource.Get.Is)
+		}
+
 	}
 
 	if resource.Head != nil {
 		//method = "HEAD"
-		fmt.Println(resource.Head.QueryParameters)
-		fmt.Println(resource.Head.Is)
+		//fmt.Println(resource.Head.QueryParameters)
+		if resource.Head.Is != nil {
+			fmt.Println(resource.Head.Is)
+		}
 	}
 
 	if resource.Post != nil {
 		//method = "POST"
-		fmt.Println(resource.Post.QueryParameters)
-		fmt.Println(resource.Post.Is)
+		//fmt.Println(resource.Post.QueryParameters)
+		if resource.Post.Is != nil {
+			fmt.Println(resource.Post.Is)
+		}
 	}
 
 	if resource.Put != nil {
 		//method = "PUT"
-		fmt.Println(resource.Put.QueryParameters)
-		fmt.Println(resource.Put.Is)
+		//fmt.Println(resource.Put.QueryParameters)
+		if resource.Put.Is != nil {
+			fmt.Println(resource.Put.Is)
+		}
 	}
 
 	if resource.Patch != nil {
 		//method = "PATCH"
-		fmt.Println(resource.Patch.QueryParameters)
-		fmt.Println(resource.Patch.Is)
+		//fmt.Println(resource.Patch.QueryParameters)
+		if resource.Patch.Is != nil {
+			fmt.Println(resource.Patch.Is)
+		}
 	}
 
 	if resource.Delete != nil {
 		//method = "DELETE"
-		fmt.Println(resource.Delete.QueryParameters)
-		fmt.Println(resource.Delete.Is)
+		//fmt.Println(resource.Delete.QueryParameters)
+		if resource.Delete.Is != nil {
+			fmt.Println(resource.Delete.Is)
+		}
 	}
 
 	for _, v := range resource.Nested {
