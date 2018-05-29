@@ -58,7 +58,7 @@ services:
   fetch:
     extends: go
     entrypoint: ["dep"]
-    command: ["ensure", "-add", "gopkg.in/yaml.v2"]
+    command: ["ensure", "-add", "github.com/advance512/yaml"]
 
   # -------------------------------------------------------------------------- #
 

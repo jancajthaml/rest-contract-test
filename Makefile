@@ -6,6 +6,7 @@ all: bootstrap package test
 .PHONY: bootstrap
 bootstrap:
 	docker-compose build go
+	docker-compose run --rm sync
 
 .PHONY: fetch
 fetch:

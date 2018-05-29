@@ -1,15 +1,18 @@
-required = [
-  "github.com/sirupsen/logrus"
-]
-
 [prune]
   non-go = true
   go-tests = true
+  unused-packages = true
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/tsaikd/go-raml-parser"
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.4"
 
 [[constraint]]
-  name = "gopkg.in/yaml.v2"
-  version = "2.2.1"
+  name = "github.com/codegangsta/cli"
+  version = "1.20.0"
+
+[[constraint]]
+  name = "github.com/advance512/yaml"
+  branch = "v2"
+
+  
