@@ -14,12 +14,37 @@
 
 package raml
 
+type QueryParameters struct {
+	Data map[string]NamedParameter
+}
+
+func (dc *QueryParameters) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	dc.Data = make(map[string]NamedParameter)
+
+	if err = unmarshaler(dc.Data); err == nil {
+		return
+	}
+
+	data := make(map[string]interface{}, 0)
+	if err = unmarshaler(&data); err == nil {
+		for k, v := range data {
+			dc.Data[k] = NamedParameter{
+				Type: v,
+			}
+		}
+
+		return
+	}
+
+	return
+}
+
 type NamedParameter struct {
 	Name        string
 	DisplayName string `yaml:"displayName"`
 	Description string
 	Type        interface{}
-	Enum        []interface{} `yaml:",flow"`
+	Enum        []string `yaml:"enum,flow"`
 	Pattern     *string
 	MinLength   *int `yaml:"minLength"`
 	MaxLength   *int `yaml:"maxLength"`
@@ -188,8 +213,9 @@ func (ref *BaseURI) UnmarshalYAML(unmarshaler func(interface{}) error) (err erro
 	}
 	composite := make(map[string]interface{})
 	if err = unmarshaler(composite); err == nil {
-		// FIXME check for key
-		ref.Data = composite["value"].(string)
+		if val, ok := composite["value"]; ok {
+			ref.Data = val.(string)
+		}
 		return
 	}
 
@@ -257,7 +283,7 @@ type Trait struct {
 	Bodies                  Bodies                 `yaml:"body"`
 	Headers                 map[string]interface{} `yaml:"headers"`
 	Responses               map[int]Response       `yaml:"responses"`
-	QueryParameters         map[string]interface{} `yaml:"queryParameters"`
+	QueryParameters         *QueryParameters       `yaml:"queryParameters"` //map[string]NamedParameter `yaml:"queryParameters"` // FIXME doesn't work
 	Protocols               []string               `yaml:"protocols"`
 	OptionalBodies          Bodies                 `yaml:"body?"`
 	OptionalHeaders         map[string]interface{} `yaml:"headers?"`
@@ -271,7 +297,7 @@ type ResourceTypeMethod struct {
 	Bodies          Bodies                    `yaml:"body"`
 	Headers         map[string]NamedParameter `yaml:"headers"`
 	Responses       map[int]Response          `yaml:"responses"`
-	QueryParameters map[string]NamedParameter `yaml:"queryParameters"`
+	QueryParameters *QueryParameters          `yaml:"queryParameters"`
 	Protocols       []string                  `yaml:"protocols"`
 }
 
@@ -297,11 +323,12 @@ type ResourceType struct {
 	OptionalPatch             *ResourceTypeMethod       `yaml:"patch?"`
 }
 
+// FIXME name differently
 type SecuritySchemeMethod struct {
 	Bodies          Bodies                    `yaml:"body"`
 	Headers         map[string]NamedParameter `yaml:"headers"`
 	Responses       map[int]Response          `yaml:"responses"`
-	QueryParameters map[string]NamedParameter `yaml:"queryParameters"`
+	QueryParameters *QueryParameters          `yaml:"queryParameters"`
 }
 
 type SecurityScheme struct {
@@ -319,7 +346,7 @@ type Method struct {
 	SecuredBy       *DefinitionSlice          `yaml:"securedBy"`
 	Headers         map[string]NamedParameter `yaml:"headers"`
 	Protocols       []string                  `yaml:"protocols"`
-	QueryParameters map[string]NamedParameter `yaml:"queryParameters"`
+	QueryParameters *QueryParameters          `yaml:"queryParameters"`
 	Bodies          Bodies                    `yaml:"body"`
 	Responses       map[int]Response          `yaml:"responses"`
 	Is              *DefinitionSlice          `yaml:"is"`

@@ -17,6 +17,7 @@ package raml
 import (
 	"bufio"
 	"bytes"
+	"strconv"
 
 	"encoding/json"
 	"encoding/xml"
@@ -27,12 +28,20 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"path/filepath"
 	"strings"
+	"time"
 
 	gio "github.com/jancajthaml/rest-contract-test/io"
 )
 
+//rand.Seed(time.Now().UnixNano())
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+
+}
 func untypedConvert(i interface{}) interface{} {
 	switch x := i.(type) {
 	case map[interface{}]interface{}:
@@ -105,24 +114,141 @@ func ReadFileContents(filePath string) ([]byte, error) {
 // also in post-process determine if string in example, body, ... is string literal
 // or string json, xml, yaml and parse it if neccessary
 
+/*
+func generateValue(t)
+
+type NamedParameter struct {
+	Name        string
+	DisplayName string `yaml:"displayName"`
+	Description string
+	Type        interface{}
+	Enum        []string `yaml:"enum,flow"`
+	Pattern     *string
+	MinLength   *int `yaml:"minLength"`
+	MaxLength   *int `yaml:"maxLength"`
+	Minimum     *float64
+	Maximum     *float64
+	Example     interface{}
+	Repeat      *bool
+	Required    bool
+	Default     interface{}
+}
+*/
+
+func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]map[string]string {
+	result := make(map[string]map[string]string)
+
+	for k, v := range dataset {
+
+		// FIXME does not work (is not parsed)
+		//fmt.Println(">>>>>>", k, v.DescribedBy.Headers)
+		//fmt.Println(">>>>>>", k)
+
+		if v.DescribedBy.QueryParameters != nil {
+
+			placeholder := make(map[string]string)
+
+			for name, parameter := range v.DescribedBy.QueryParameters.Data {
+				if parameter.Example != nil {
+					switch typed := parameter.Example.(type) {
+					case string:
+						placeholder[name] = strings.Replace(typed, "\n", "", -1)
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+				} else if parameter.Enum != nil {
+					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+				} /*else if parameter.Type != nil {
+					// FIXME now need to generate value based by validations and type
+					switch typed := parameter.Type.(type) {
+					case string:
+						queryParamsSecurity[name] = typed
+					case int:
+						queryParamsSecurity[name] = strconv.Itoa(typed)
+					}
+				}*/
+			}
+			if len(placeholder) != 0 {
+				result[k] = placeholder
+			}
+		}
+	}
+
+	return result
+}
+
+func populateTraitQueryParams(dataset map[string]*Trait) map[string]map[string]string {
+	//queryParamsSecurity := make(map[string]string)
+
+	result := make(map[string]map[string]string)
+
+	//fmt.Println(">>>> extracting data from traits")
+	for k, v := range dataset {
+
+		//result[k] = make(map[string]string)
+
+		// FIXME does not work (is not parsed)
+		//fmt.Println(">>>>>>", k)
+
+		if v.QueryParameters != nil {
+
+			placeholder := make(map[string]string)
+
+			for name, parameter := range v.QueryParameters.Data {
+				if parameter.Example != nil {
+					switch typed := parameter.Example.(type) {
+					case string:
+						placeholder[name] = strings.Replace(typed, "\n", "", -1)
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+				} else if parameter.Enum != nil {
+					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+				} /* else if parameter.Type != nil {
+					switch typed := parameter.Type.(type) {
+					case string:
+						queryParamsTraits[name] = typed
+					case int:
+						queryParamsTraits[name] = strconv.Itoa(typed)
+					}
+					// FIXME now need to generate value based by validations and type
+				}*/
+			}
+			if len(placeholder) != 0 {
+				result[k] = placeholder
+			}
+		}
+	}
+
+	return result
+}
+
 func PostProcess(rootResource *APIDefinition) {
-	fmt.Println("!!!post processing start")
+	fmt.Println("!!! post processing start !!!")
 
-	//rootResource.RAMLVersion = ">>>" + rootResource.RAMLVersion + "<<<"
+	//queryParamsTraits := make(map[string]string)
 
-	fmt.Println(">>>> extracting data from security schemes")
+	//fmt.Println(">>>> extracting data from security schemes")
 
-	// FIXME does not work (is not parsed)
-	for k, v := range rootResource.SecuritySchemes {
-		fmt.Println(k, v.DescribedBy.Headers, v.DescribedBy.QueryParameters)
-	}
+	// FIXME deduplicate
 
-	fmt.Println(">>>> extracting data from traits")
-	for k, v := range rootResource.Traits.Data {
-		fmt.Println(k, v.Headers, v.QueryParameters)
-	}
+	//queryParamsSecurity := populateSecurityQueryParams(rootResource.SecuritySchemes)
+	//queryParamsTraits := populateTraitQueryParams(rootResource.Traits.Data)
 
-	fmt.Println("!!! post processing done")
+	queryParamsSecurity := make(chan map[string]map[string]string)
+	queryParamsTraits := make(chan map[string]map[string]string)
+
+	go func() {
+		queryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
+	}()
+	go func() {
+		queryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
+	}()
+
+	fmt.Println("queryParams security :", <-queryParamsSecurity)
+	fmt.Println("queryParams traits   :", <-queryParamsTraits)
+
+	fmt.Println("!!! post processing done !!!")
 }
 
 func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, error) {
