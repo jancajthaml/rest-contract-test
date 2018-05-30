@@ -14,11 +14,38 @@
 
 package raml
 
+// FIXME info query parameters and headers are redundant data-types
+
 type QueryParameters struct {
 	Data map[string]NamedParameter
 }
 
 func (ref *QueryParameters) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	ref.Data = make(map[string]NamedParameter)
+
+	if err = unmarshaler(ref.Data); err == nil {
+		return
+	}
+
+	data := make(map[string]interface{}, 0)
+	if err = unmarshaler(&data); err == nil {
+		for k, v := range data {
+			ref.Data[k] = NamedParameter{
+				Type: v,
+			}
+		}
+
+		return
+	}
+
+	return
+}
+
+type Headers struct {
+	Data map[string]NamedParameter
+}
+
+func (ref *Headers) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
 	ref.Data = make(map[string]NamedParameter)
 
 	if err = unmarshaler(ref.Data); err == nil {
@@ -67,7 +94,7 @@ type Body struct {
 	Description    string                    `yaml:"description"`
 	Example        interface{}               `yaml:"example"`
 	FormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers        map[string]NamedParameter `yaml:"headers"`
+	Headers        *Headers                  `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
 }
 
 type Bodies struct {
@@ -76,7 +103,7 @@ type Bodies struct {
 	DefaultDescription    string                    `yaml:"description"`
 	DefaultExample        interface{}               `yaml:"example"`
 	DefaultFormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers               map[string]NamedParameter `yaml:"headers"`
+	Headers               *Headers                  `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
 	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
 }
 
@@ -85,15 +112,15 @@ type LiteralBodies struct {
 	DefaultDescription    string                    `yaml:"description"`
 	DefaultExample        interface{}               `yaml:"example"`
 	DefaultFormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers               map[string]NamedParameter `yaml:"headers"`
+	Headers               *Headers                  `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
 	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
 }
 
 type Response struct {
 	HTTPCode    int
 	Description string
-	Headers     map[string]NamedParameter `yaml:"headers"`
-	Bodies      Bodies                    `yaml:"body"`
+	Headers     *Headers `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Bodies      Bodies   `yaml:"body"`
 }
 
 type Traits struct {
@@ -293,13 +320,10 @@ func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) 
 }
 
 type Trait struct {
-	//Name                    string
-	//Usage                   interface{}
-	//Description             string
 	Bodies                  Bodies                 `yaml:"body"`
-	Headers                 map[string]interface{} `yaml:"headers"`
+	Headers                 *Headers               `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
 	Responses               map[int]Response       `yaml:"responses"`
-	QueryParameters         *QueryParameters       `yaml:"queryParameters"` //map[string]NamedParameter `yaml:"queryParameters"` // FIXME doesn't work
+	QueryParameters         *QueryParameters       `yaml:"queryParameters"`
 	Protocols               []string               `yaml:"protocols"`
 	OptionalBodies          Bodies                 `yaml:"body?"`
 	OptionalHeaders         map[string]interface{} `yaml:"headers?"`
@@ -308,13 +332,14 @@ type Trait struct {
 }
 
 type ResourceTypeMethod struct {
-	Name            string
-	Description     string
-	Bodies          Bodies                    `yaml:"body"`
-	Headers         map[string]NamedParameter `yaml:"headers"`
-	Responses       map[int]Response          `yaml:"responses"`
-	QueryParameters *QueryParameters          `yaml:"queryParameters"`
-	Protocols       []string                  `yaml:"protocols"`
+	Name        string
+	Description string
+	Bodies      Bodies `yaml:"body"`
+
+	Headers         *Headers         `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Responses       map[int]Response `yaml:"responses"`
+	QueryParameters *QueryParameters `yaml:"queryParameters"`
+	Protocols       []string         `yaml:"protocols"`
 }
 
 type ResourceType struct {
@@ -341,31 +366,35 @@ type ResourceType struct {
 
 // FIXME name differently
 type SecuritySchemeMethod struct {
-	Bodies          Bodies                    `yaml:"body"`
-	Headers         map[string]NamedParameter `yaml:"headers"`
-	Responses       map[int]Response          `yaml:"responses"`
-	QueryParameters *QueryParameters          `yaml:"queryParameters"`
+	Bodies Bodies `yaml:"body"`
+
+	Headers *Headers `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+
+	Responses       map[int]Response `yaml:"responses"`
+	QueryParameters *QueryParameters `yaml:"queryParameters"`
 }
 
 type SecurityScheme struct {
 	Name        string
 	Description string
 	Type        interface{}
-	DescribedBy SecuritySchemeMethod
+	DescribedBy SecuritySchemeMethod `yaml:"describedBy"`
 	Settings    map[string]interface{}
 	Other       map[string]string
 }
 
 type Method struct {
-	Name            string
-	Description     string
-	SecuredBy       *Reference                `yaml:"securedBy"`
-	Headers         map[string]NamedParameter `yaml:"headers"`
-	Protocols       []string                  `yaml:"protocols"`
-	QueryParameters *QueryParameters          `yaml:"queryParameters"`
-	Bodies          Bodies                    `yaml:"body"`
-	Responses       map[int]Response          `yaml:"responses"`
-	Is              *Reference                `yaml:"is"`
+	Name        string
+	Description string
+	SecuredBy   *Reference `yaml:"securedBy"`
+
+	Headers *Headers `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+
+	Protocols       []string         `yaml:"protocols"`
+	QueryParameters *QueryParameters `yaml:"queryParameters"`
+	Bodies          Bodies           `yaml:"body"`
+	Responses       map[int]Response `yaml:"responses"`
+	Is              *Reference       `yaml:"is"`
 }
 
 type Resource struct {
@@ -393,8 +422,9 @@ type APIDefinition struct {
 	Protocols         []string                  `yaml:"protocols"`
 	MediaType         *MediaType                `yaml:"mediaType"`
 	SecuritySchemes   map[string]SecurityScheme `yaml:"securitySchemes"`
-	SecuredBy         *Reference                `yaml:"securedBy"`
-	Documentation     []Documentation           `yaml:"documentation"`
+
+	SecuredBy     *Reference      `yaml:"securedBy"`
+	Documentation []Documentation `yaml:"documentation"`
 
 	// FIXME these three are same data structures and thus now redundant
 	Schemas       *Schemas       `yaml:"schemas"`

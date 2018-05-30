@@ -36,12 +36,10 @@ import (
 	gio "github.com/jancajthaml/rest-contract-test/io"
 )
 
-//rand.Seed(time.Now().UnixNano())
-
 func init() {
 	rand.Seed(time.Now().UnixNano())
-
 }
+
 func untypedConvert(i interface{}) interface{} {
 	switch x := i.(type) {
 	case map[interface{}]interface{}:
@@ -107,34 +105,6 @@ func ReadFileContents(filePath string) ([]byte, error) {
 	return data, nil
 }
 
-// FIXME add PostProcess function that resolves references and saturates them in-place
-// types, schemes everything that is referenced by simple string (name) be that in
-// primitive value of slice of said values
-//
-// also in post-process determine if string in example, body, ... is string literal
-// or string json, xml, yaml and parse it if neccessary
-
-/*
-func generateValue(t)
-
-type NamedParameter struct {
-	Name        string
-	DisplayName string `yaml:"displayName"`
-	Description string
-	Type        interface{}
-	Enum        []string `yaml:"enum,flow"`
-	Pattern     *string
-	MinLength   *int `yaml:"minLength"`
-	MaxLength   *int `yaml:"maxLength"`
-	Minimum     *float64
-	Maximum     *float64
-	Example     interface{}
-	Repeat      *bool
-	Required    bool
-	Default     interface{}
-}
-*/
-
 func CopyMap(ref map[string]string) map[string]string {
 	clone := make(map[string]string)
 	for k, v := range ref {
@@ -147,10 +117,6 @@ func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]m
 	result := make(map[string]map[string]string)
 
 	for k, v := range dataset {
-
-		// FIXME does not work (is not parsed)
-		//fmt.Println(">>>>>>", k, v.DescribedBy.Headers)
-		//fmt.Println(">>>>>>", k)
 
 		if v.DescribedBy.QueryParameters != nil {
 
@@ -186,17 +152,10 @@ func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]m
 }
 
 func populateTraitQueryParams(dataset map[string]*Trait) map[string]map[string]string {
-	//queryParamsSecurity := make(map[string]string)
 
 	result := make(map[string]map[string]string)
 
-	//fmt.Println(">>>> extracting data from traits")
 	for k, v := range dataset {
-
-		//result[k] = make(map[string]string)
-
-		// FIXME does not work (is not parsed)
-		//fmt.Println(">>>>>>", k)
 
 		if v.QueryParameters != nil {
 
@@ -225,6 +184,92 @@ func populateTraitQueryParams(dataset map[string]*Trait) map[string]map[string]s
 			if len(placeholder) != 0 {
 				result[k] = placeholder
 			}
+		}
+	}
+
+	return result
+}
+
+func populateSecurityHeaders(dataset map[string]SecurityScheme) map[string]map[string]string {
+
+	result := make(map[string]map[string]string)
+
+	//fmt.Printf("headers security", dataset)
+
+	for k, v := range dataset {
+
+		//fmt.Println("headers security", k, v.DescribedBy.Headers)
+
+		if v.DescribedBy.Headers != nil {
+			//fmt.Println(k, v.DescribedBy.Headers)
+
+			placeholder := make(map[string]string)
+
+			for name, parameter := range v.DescribedBy.Headers.Data {
+				if parameter.Example != nil {
+					switch typed := parameter.Example.(type) {
+					case string:
+						placeholder[name] = strings.Replace(typed, "\n", "", -1)
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+				} else if parameter.Enum != nil {
+					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+				} else if parameter.Type != nil {
+					switch typed := parameter.Type.(type) {
+					case string:
+						placeholder[name] = typed
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+					// FIXME now need to generate value based by validations and type
+				}
+			}
+			if len(placeholder) != 0 {
+				result[k] = placeholder
+			}
+
+		}
+	}
+
+	return result
+}
+
+func populateTraitHeaders(dataset map[string]*Trait) map[string]map[string]string {
+
+	result := make(map[string]map[string]string)
+
+	for k, v := range dataset {
+
+		if v.Headers != nil {
+			//			fmt.Println(k, v.Headers)
+
+			placeholder := make(map[string]string)
+
+			for name, parameter := range v.Headers.Data {
+				if parameter.Example != nil {
+					switch typed := parameter.Example.(type) {
+					case string:
+						placeholder[name] = strings.Replace(typed, "\n", "", -1)
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+				} else if parameter.Enum != nil {
+					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+				} else if parameter.Type != nil {
+					switch typed := parameter.Type.(type) {
+					case string:
+						placeholder[name] = typed
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+					// FIXME now need to generate value based by validations and type
+				}
+			}
+			if len(placeholder) != 0 {
+				result[k] = placeholder
+			}
+
 		}
 	}
 

@@ -61,11 +61,8 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 
 	err = yaml.Unmarshal(preprocessedContentsBytes, apiDefinition)
 	if err != nil {
-		//fmt.Println(string(preprocessedContentsBytes))
 		return nil, err
 	}
-
-	//PostProcess(apiDefinition)
 
 	return apiDefinition, nil
 }
@@ -84,6 +81,8 @@ func NewRaml(file string) (*model.Contract, error) {
 
 	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
 	eventualQueryParamsTraits := make(chan map[string]map[string]string)
+	eventualHeaderTraits := make(chan map[string]map[string]string)
+	eventualHeaderSecurity := make(chan map[string]map[string]string)
 
 	go func() {
 		eventualQueryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
@@ -91,17 +90,23 @@ func NewRaml(file string) (*model.Contract, error) {
 	go func() {
 		eventualQueryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
 	}()
-
-	//fmt.Println("queryParams security :", <-queryParamsSecurity)
-	//fmt.Println("queryParams traits   :", <-queryParamsTraits)
+	go func() {
+		eventualHeaderTraits <- populateTraitHeaders(rootResource.Traits.Data)
+	}()
+	go func() {
+		eventualHeaderSecurity <- populateSecurityHeaders(rootResource.SecuritySchemes)
+	}()
 
 	queryParamsSecurity := <-eventualQueryParamsSecurity
 	queryParamsTraits := <-eventualQueryParamsTraits
+	headerTraits := <-eventualHeaderTraits
+	headerSecurity := <-eventualHeaderSecurity
 
-	acumulated := make(map[string]string)
+	fmt.Println(headerTraits)
+	fmt.Println(headerSecurity)
 
 	for path, v := range rootResource.Resources {
-		walk(contract, path, &v, acumulated, queryParamsSecurity, queryParamsTraits)
+		walk(contract, path, &v, make(map[string]string), queryParamsSecurity, queryParamsTraits)
 	}
 
 	contract.Type = rootResource.RAMLVersion
@@ -109,27 +114,14 @@ func NewRaml(file string) (*model.Contract, error) {
 	return contract, nil
 }
 
-func fillResponses(method *Method) []model.Response {
-	// FIXME TBD
-	return nil
-}
-
-func fillRequest(method *Method) model.Request {
-	// FIXME TBD
-	return model.Request{}
-}
-
 func walk(contract *model.Contract, path string, resource *Resource, queryStrings map[string]string, security map[string]map[string]string, traits map[string]map[string]string) {
-	//extractMethods(contract, path, resource)
 
-	//acumulated := make(map[string]string)
 	var found = false
 	var qs map[string]string
 
 	if resource.Is != nil {
 		for _, ref := range resource.Is.Data {
 			if val, ok := traits[ref]; ok {
-				//fmt.Println(val)
 				for k, v := range val {
 					queryStrings[k] = v
 				}
@@ -148,6 +140,7 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 				}
 			}
 		}
+		// FIXME there can be queryParams inlined
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			Path:         path,
 			Method:       "GET",
@@ -167,6 +160,7 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 				}
 			}
 		}
+		// FIXME there can be queryParams inlined
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			Path:         path,
 			Method:       "HEAD",
@@ -186,6 +180,7 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 				}
 			}
 		}
+		// FIXME there can be queryParams inlined
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			Path:         path,
 			Method:       "POST",
@@ -205,6 +200,7 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 				}
 			}
 		}
+		// FIXME there can be queryParams inlined
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			Path:         path,
 			Method:       "PUT",
@@ -224,6 +220,7 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 				}
 			}
 		}
+		// FIXME there can be queryParams inlined
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			Path:         path,
 			Method:       "PATCH",
