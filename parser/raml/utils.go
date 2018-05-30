@@ -135,65 +135,12 @@ type NamedParameter struct {
 }
 */
 
-func populateMethodsQueryStrings(resource *Resource, security map[string]map[string]string, traits map[string]map[string]string) {
-	//populateMethods(contract, path, resource)
-
-	// INFO "is" is populated by traits
-
-	//var method = ""
-
-	if resource.Get != nil {
-		//method = "GET"
-		//fmt.Println(resource.Get.QueryParameters)
-		if resource.Get.Is != nil {
-			fmt.Println(resource.Get.Is)
-		}
-
+func CopyMap(ref map[string]string) map[string]string {
+	clone := make(map[string]string)
+	for k, v := range ref {
+		clone[k] = v
 	}
-
-	if resource.Head != nil {
-		//method = "HEAD"
-		//fmt.Println(resource.Head.QueryParameters)
-		if resource.Head.Is != nil {
-			fmt.Println(resource.Head.Is)
-		}
-	}
-
-	if resource.Post != nil {
-		//method = "POST"
-		//fmt.Println(resource.Post.QueryParameters)
-		if resource.Post.Is != nil {
-			fmt.Println(resource.Post.Is)
-		}
-	}
-
-	if resource.Put != nil {
-		//method = "PUT"
-		//fmt.Println(resource.Put.QueryParameters)
-		if resource.Put.Is != nil {
-			fmt.Println(resource.Put.Is)
-		}
-	}
-
-	if resource.Patch != nil {
-		//method = "PATCH"
-		//fmt.Println(resource.Patch.QueryParameters)
-		if resource.Patch.Is != nil {
-			fmt.Println(resource.Patch.Is)
-		}
-	}
-
-	if resource.Delete != nil {
-		//method = "DELETE"
-		//fmt.Println(resource.Delete.QueryParameters)
-		if resource.Delete.Is != nil {
-			fmt.Println(resource.Delete.Is)
-		}
-	}
-
-	for _, v := range resource.Nested {
-		populateMethodsQueryStrings(v, security, traits)
-	}
+	return clone
 }
 
 func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]map[string]string {
@@ -282,39 +229,6 @@ func populateTraitQueryParams(dataset map[string]*Trait) map[string]map[string]s
 	}
 
 	return result
-}
-
-func PostProcess(rootResource *APIDefinition) {
-	//fmt.Println("!!! post processing start !!!")
-
-	//queryParamsTraits := make(map[string]string)
-
-	//fmt.Println(">>>> extracting data from security schemes")
-
-	// FIXME deduplicate
-
-	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
-	eventualQueryParamsTraits := make(chan map[string]map[string]string)
-
-	go func() {
-		eventualQueryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
-	}()
-	go func() {
-		eventualQueryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
-	}()
-
-	//fmt.Println("queryParams security :", <-queryParamsSecurity)
-	//fmt.Println("queryParams traits   :", <-queryParamsTraits)
-
-	queryParamsSecurity := <-eventualQueryParamsSecurity
-	queryParamsTraits := <-eventualQueryParamsTraits
-
-	for _, v := range rootResource.Resources {
-		populateMethodsQueryStrings(&v, queryParamsSecurity, queryParamsTraits)
-	}
-
-	//populateMethodsQueryStrings(<-queryParamsSecurity, <-queryParamsTraits)
-	//fmt.Println("!!! post processing done !!!")
 }
 
 func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, error) {

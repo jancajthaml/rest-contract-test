@@ -61,11 +61,11 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 
 	err = yaml.Unmarshal(preprocessedContentsBytes, apiDefinition)
 	if err != nil {
-		fmt.Println(string(preprocessedContentsBytes))
+		//fmt.Println(string(preprocessedContentsBytes))
 		return nil, err
 	}
 
-	PostProcess(apiDefinition)
+	//PostProcess(apiDefinition)
 
 	return apiDefinition, nil
 }
@@ -82,8 +82,26 @@ func NewRaml(file string) (*model.Contract, error) {
 
 	contract.Name = rootResource.Title
 
+	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
+	eventualQueryParamsTraits := make(chan map[string]map[string]string)
+
+	go func() {
+		eventualQueryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
+	}()
+	go func() {
+		eventualQueryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
+	}()
+
+	//fmt.Println("queryParams security :", <-queryParamsSecurity)
+	//fmt.Println("queryParams traits   :", <-queryParamsTraits)
+
+	queryParamsSecurity := <-eventualQueryParamsSecurity
+	queryParamsTraits := <-eventualQueryParamsTraits
+
+	acumulated := make(map[string]string)
+
 	for path, v := range rootResource.Resources {
-		walk(contract, path, &v)
+		walk(contract, path, &v, acumulated, queryParamsSecurity, queryParamsTraits)
 	}
 
 	contract.Type = rootResource.RAMLVersion
@@ -101,53 +119,148 @@ func fillRequest(method *Method) model.Request {
 	return model.Request{}
 }
 
-func extractMethods(contract *model.Contract, path string, resource *Resource) {
-	var method = ""
+func walk(contract *model.Contract, path string, resource *Resource, queryStrings map[string]string, security map[string]map[string]string, traits map[string]map[string]string) {
+	//extractMethods(contract, path, resource)
+
+	//acumulated := make(map[string]string)
+	var found = false
+	var qs map[string]string
+
+	if resource.Is != nil {
+		for _, ref := range resource.Is.Data {
+			if val, ok := traits[ref]; ok {
+				//fmt.Println(val)
+				for k, v := range val {
+					queryStrings[k] = v
+				}
+			}
+		}
+	}
 
 	if resource.Get != nil {
-		method = "GET"
-		//fmt.Println(resource.Get.Headers)
+		qs = CopyMap(queryStrings)
+		if resource.Get.Is != nil {
+			for _, ref := range resource.Get.Is.Data {
+				if val, ok := traits[ref]; ok {
+					for k, v := range val {
+						qs[k] = v
+					}
+				}
+			}
+		}
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			Path:         path,
+			Method:       "GET",
+			QueryStrings: qs,
+		})
+		found = true
 	}
 
 	if resource.Head != nil {
-		method = "HEAD"
+		qs = CopyMap(queryStrings)
+		if resource.Head.Is != nil {
+			for _, ref := range resource.Head.Is.Data {
+				if val, ok := traits[ref]; ok {
+					for k, v := range val {
+						qs[k] = v
+					}
+				}
+			}
+		}
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			Path:         path,
+			Method:       "HEAD",
+			QueryStrings: qs,
+		})
+		found = true
 	}
 
 	if resource.Post != nil {
-		method = "POST"
+		qs = CopyMap(queryStrings)
+		if resource.Post.Is != nil {
+			for _, ref := range resource.Post.Is.Data {
+				if val, ok := traits[ref]; ok {
+					for k, v := range val {
+						qs[k] = v
+					}
+				}
+			}
+		}
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			Path:         path,
+			Method:       "POST",
+			QueryStrings: qs,
+		})
+		found = true
 	}
 
 	if resource.Put != nil {
-		method = "PUT"
+		qs = CopyMap(queryStrings)
+		if resource.Put.Is != nil {
+			for _, ref := range resource.Put.Is.Data {
+				if val, ok := traits[ref]; ok {
+					for k, v := range val {
+						qs[k] = v
+					}
+				}
+			}
+		}
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			Path:         path,
+			Method:       "PUT",
+			QueryStrings: qs,
+		})
+		found = true
 	}
 
 	if resource.Patch != nil {
-		method = "PATCH"
+		qs = CopyMap(queryStrings)
+		if resource.Patch.Is != nil {
+			for _, ref := range resource.Patch.Is.Data {
+				if val, ok := traits[ref]; ok {
+					for k, v := range val {
+						qs[k] = v
+					}
+				}
+			}
+		}
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			Path:         path,
+			Method:       "PATCH",
+			QueryStrings: qs,
+		})
+		found = true
 	}
 
 	if resource.Delete != nil {
-		method = "DELETE"
+		qs = CopyMap(queryStrings)
+		if resource.Delete.Is != nil {
+			for _, ref := range resource.Delete.Is.Data {
+				if val, ok := traits[ref]; ok {
+					for k, v := range val {
+						qs[k] = v
+					}
+				}
+			}
+		}
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			Path:         path,
+			Method:       "DELETE",
+			QueryStrings: qs,
+		})
+		found = true
 	}
 
-	if len(method) == 0 {
-		method = "GET"
+	if !found {
+		qs = CopyMap(queryStrings)
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			Path:         path,
+			Method:       "GET",
+			QueryStrings: qs,
+		})
 	}
-
-	res := model.Endpoint{
-		Path:   path,
-		Method: method,
-		//Responses: fillResponses(endpoint),
-		//Headers:   "",
-		//Request:   fillRequest(endpoint),
-	}
-
-	contract.Endpoints = append(contract.Endpoints, res)
-}
-
-func walk(contract *model.Contract, path string, resource *Resource) {
-	extractMethods(contract, path, resource)
 
 	for k, v := range resource.Nested {
-		walk(contract, path+k, v)
+		walk(contract, path+k, v, queryStrings, security, traits)
 	}
 }

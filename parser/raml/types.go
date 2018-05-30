@@ -18,17 +18,17 @@ type QueryParameters struct {
 	Data map[string]NamedParameter
 }
 
-func (dc *QueryParameters) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	dc.Data = make(map[string]NamedParameter)
+func (ref *QueryParameters) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	ref.Data = make(map[string]NamedParameter)
 
-	if err = unmarshaler(dc.Data); err == nil {
+	if err = unmarshaler(ref.Data); err == nil {
 		return
 	}
 
 	data := make(map[string]interface{}, 0)
 	if err = unmarshaler(&data); err == nil {
 		for k, v := range data {
-			dc.Data[k] = NamedParameter{
+			ref.Data[k] = NamedParameter{
 				Type: v,
 			}
 		}
@@ -96,23 +96,14 @@ type Response struct {
 	Bodies      Bodies                    `yaml:"body"`
 }
 
-type DefinitionSlice struct {
-	Data []*DefinitionChoice
-}
-
-type DefinitionChoice struct {
-	Name       interface{}
-	Parameters map[interface{}]interface{}
-}
-
 type Traits struct {
 	Data map[string]*Trait
 }
 
-func (dc *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	dc.Data = make(map[string]*Trait)
+func (ref *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	ref.Data = make(map[string]*Trait)
 
-	if err = unmarshaler(dc.Data); err == nil {
+	if err = unmarshaler(ref.Data); err == nil {
 		return
 	}
 
@@ -120,7 +111,7 @@ func (dc *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error)
 	if err = unmarshaler(&data); err == nil {
 		for _, subset := range data {
 			for k, v := range subset {
-				dc.Data[k] = v
+				ref.Data[k] = v
 			}
 		}
 
@@ -241,24 +232,49 @@ func (ref *MediaType) UnmarshalYAML(unmarshaler func(interface{}) error) (err er
 	return
 }
 
-func (ref *DefinitionSlice) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	simple := new(DefinitionChoice)
-	if err = unmarshaler(simple); err == nil {
-		ref.Data = make([]*DefinitionChoice, 1)
-		ref.Data[0] = simple
-		return
-	}
+type DefinitionChoice struct {
+	Name       string
+	Parameters map[interface{}]interface{}
+}
 
-	if err = unmarshaler(&(ref.Data)); err == nil {
-		return
+type Reference struct {
+	Data []string
+}
+
+func (ref *Reference) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	ref.Data = make([]string, 0)
+
+	var anything interface{}
+	if err = unmarshaler(&anything); err == nil {
+
+		switch hinted := anything.(type) {
+
+		case []interface{}:
+			for _, v := range hinted {
+				switch typed := v.(type) {
+
+				case map[interface{}]interface{}:
+					for k := range typed {
+						ref.Data = append(ref.Data, k.(string))
+					}
+
+				case interface{}:
+					ref.Data = append(ref.Data, typed.(string))
+				}
+			}
+
+		case interface{}:
+			ref.Data = append(ref.Data, hinted.(string))
+
+		}
 	}
 
 	return
 }
 
 func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	simpleDefinition := new(interface{})
-	parameterizedDefinition := make(map[interface{}]map[interface{}]interface{})
+	simpleDefinition := new(string)
+	parameterizedDefinition := make(map[string]map[interface{}]interface{})
 
 	if err = unmarshaler(simpleDefinition); err == nil {
 		ref.Name = *simpleDefinition
@@ -343,21 +359,21 @@ type SecurityScheme struct {
 type Method struct {
 	Name            string
 	Description     string
-	SecuredBy       *DefinitionSlice          `yaml:"securedBy"`
+	SecuredBy       *Reference                `yaml:"securedBy"`
 	Headers         map[string]NamedParameter `yaml:"headers"`
 	Protocols       []string                  `yaml:"protocols"`
 	QueryParameters *QueryParameters          `yaml:"queryParameters"`
 	Bodies          Bodies                    `yaml:"body"`
 	Responses       map[int]Response          `yaml:"responses"`
-	Is              *DefinitionSlice          `yaml:"is"`
+	Is              *Reference                `yaml:"is"`
 }
 
 type Resource struct {
-	SecuredBy         *DefinitionSlice          `yaml:"securedBy"`
+	SecuredBy         *Reference                `yaml:"securedBy"`
 	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"`
 	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
 	Type              *DefinitionChoice         `yaml:"type"`
-	Is                *DefinitionSlice          `yaml:"is"`
+	Is                *Reference                `yaml:"is"`
 	Get               *Method                   `yaml:"get"`
 	Head              *Method                   `yaml:"head"`
 	Post              *Method                   `yaml:"post"`
@@ -377,7 +393,7 @@ type APIDefinition struct {
 	Protocols         []string                  `yaml:"protocols"`
 	MediaType         *MediaType                `yaml:"mediaType"`
 	SecuritySchemes   map[string]SecurityScheme `yaml:"securitySchemes"`
-	SecuredBy         *DefinitionSlice          `yaml:"securedBy"`
+	SecuredBy         *Reference                `yaml:"securedBy"`
 	Documentation     []Documentation           `yaml:"documentation"`
 
 	// FIXME these three are same data structures and thus now redundant

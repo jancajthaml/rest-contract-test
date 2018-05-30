@@ -33,17 +33,11 @@ func CmdTest(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Source: %s\n", contract.Source)
+	fmt.Printf("Type: %s\n", contract.Type)
 
-	fmt.Printf("+------------------------------------------------------------------------\n")
-	fmt.Printf("| %s (%s)\n", contract.Source, contract.Type)
-	fmt.Printf("+------------------------------------------------------------------------\n")
-	fmt.Printf("| title: %s\n", contract.Name)
-	fmt.Printf("+------------------------------------------------------------------------\n")
 	for _, endpoint := range contract.Endpoints {
-		fmt.Printf("| %s | %s\n", endpoint.Method+"      "[0:6-len(endpoint.Method)], endpoint.Path)
-	}
-	if len(contract.Endpoints) > 0 {
-		fmt.Printf("+------------------------------------------------------------------------\n")
+		fmt.Printf("Endpoint: %s\n", endpoint)
 	}
 
 	return nil

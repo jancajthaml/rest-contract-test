@@ -14,39 +14,20 @@
 
 package model
 
-import "fmt"
+import "bytes"
 
-type Response struct {
-	Example string
-	Schema  string
-}
-
-type Request struct {
-	Example string
-	Schema  string
-	Query   string
-}
-
-type Endpoint struct {
-	Path         string
-	Method       string
-	Responses    []Response
-	Headers      string
-	Request      Request
-	QueryStrings map[string]string
-}
-
-type Contract struct {
-	Source    string
-	Type      string
-	Name      string
-	Endpoints []Endpoint
-}
-
-func (ref Endpoint) String() string {
-	qs := Urlencode(ref.QueryStrings)
-	if len(qs) != 0 {
-		qs = "?" + qs
+func Urlencode(data map[string]string) string {
+	if len(data) == 0 {
+		return ""
 	}
-	return fmt.Sprintf("%s %s%s", ref.Method, ref.Path, qs)
+
+	var buf bytes.Buffer
+	for k, v := range data {
+		buf.WriteString(k)
+		buf.WriteByte('=')
+		buf.WriteString(v)
+		buf.WriteByte('&')
+	}
+	s := buf.String()
+	return s[0 : len(s)-1]
 }
