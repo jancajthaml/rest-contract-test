@@ -88,10 +88,18 @@ func NewRaml(file string) (*model.Contract, error) {
 		eventualQueryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
 	}()
 	go func() {
-		eventualQueryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
+		if rootResource.Traits != nil {
+			eventualQueryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
+		} else {
+			eventualQueryParamsTraits <- make(map[string]map[string]string)
+		}
 	}()
 	go func() {
-		eventualHeaderTraits <- populateTraitHeaders(rootResource.Traits.Data)
+		if rootResource.Traits != nil {
+			eventualHeaderTraits <- populateTraitHeaders(rootResource.Traits.Data)
+		} else {
+			eventualHeaderTraits <- make(map[string]map[string]string)
+		}
 	}()
 	go func() {
 		eventualHeaderSecurity <- populateSecurityHeaders(rootResource.SecuritySchemes)

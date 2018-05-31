@@ -1,0 +1,20 @@
+{
+  "title": "Get Person List",
+  "type": "array",
+  "description": "list of person data",
+  "items": {
+  	"type": "object",
+  	"required": [
+	    "firstName",
+	    "lastName"
+	  ],
+	  "properties": {
+	    "firstName": {
+	      "type": "string"
+	    },
+	    "lastName": {
+	      "type": "string"
+	    }
+	  }
+  } 
+}

@@ -1,0 +1,13 @@
+{
+  "title": "Ping",
+  "type": "object",
+  "description": "health check",
+  "required": [
+    "time"
+  ],
+  "properties": {
+    "time": {
+      "type": "string"
+    }
+  }
+}

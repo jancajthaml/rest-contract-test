@@ -1,0 +1,17 @@
+{
+  "title": "Get Person",
+  "type": "object",
+  "description": "person data",
+  "required": [
+    "firstName",
+    "lastName"
+  ],
+  "properties": {
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    }
+  }
+}

@@ -40,16 +40,6 @@ test:
 bench:
 	docker-compose run --rm bench
 
-.PHONY: bbtest
-bbtest:
-	@echo "[info] stopping older runs"
-	@(docker rm -f $$(docker-compose ps -q) 2> /dev/null || :) &> /dev/null
-	@echo "[info] running bbtest"
-	@docker-compose run --rm bbtest
-	@echo "[info] stopping runs"
-	@(docker rm -f $$(docker-compose ps -q) 2> /dev/null || :) &> /dev/null
-	@(docker rm -f $$(docker ps -aqf "name=bbtest") || :) &> /dev/null
-
 .PHONY: package
 package:
 	docker-compose run --rm package
@@ -57,12 +47,14 @@ package:
 
 .PHONY: verify
 verify:
-	@echo "\nRAML 0.8"
-	@find ./bin -type f -name "darwin*" -exec ./{} test spec/raml/v08/api.raml \;
-	@echo "\nRAML 1.0"
-	@find ./bin -type f -name "darwin*" -exec ./{} test spec/raml/v10/api.raml \;
-	@echo "\nSWAGGER 2.0"
-	@find ./bin -type f -name "darwin*" -exec ./{} test spec/swagger/v20/api.json \;
-	@echo "\nSWAGGER 3.0"
-	@find ./bin -type f -name "darwin*" -exec ./{} test spec/swagger/v30/api-with-examples.yaml \;
+	@eval $(eval ct=$(shell sh -c 'find ./bin -type f -name "darwin*"' | awk '{print $$1}'))
 
+	@echo "[info] test all"
+	@find ./spec -type f -name "*api*" -exec $(ct) test {} \;
+
+.PHONY: bbtest
+bbtest:
+	@eval $(eval ct=$(shell sh -c 'find ./bin -type f -name "darwin*"' | awk '{print $$1}'))
+
+	@echo "[info] test bbtest"
+	@$(ct) test bbtest/raml/api.raml

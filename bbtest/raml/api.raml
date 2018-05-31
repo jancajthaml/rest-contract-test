@@ -1,0 +1,60 @@
+#%RAML 1.0
+title: Contract mock server
+baseUri: http://testee:{port}
+protocols: [ HTTP ]
+mediaType: application/json
+
+types:
+  Ping: !include schema.ping.json
+  PersonData: !include schema.person_data.json
+  PersonNew: !include schema.person_new.json
+  PersonCreated: !include schema.person_created.json
+  PersonList: !include schema.person_list.json
+
+/ping:
+  get:
+    description: Health check
+    responses:
+      200:
+        body:
+          application/json:
+            type: Ping
+            example: !include example.ping.json
+    headers:
+      Accept:
+        example: application/json
+
+/{version}/person/{person-id}:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            type: PersonData
+            example: !include example.person_data.json
+
+/{version}/person:
+  post:
+    body:
+      application/json:
+        type: PersonNew
+        example: !include example.person_new.json
+    responses:
+      200:
+        body:
+          application/json:
+            type: PersonCreated
+            example: !include example.person_created.json
+  get:
+    queryParameters:
+      LastName:
+        type: string
+        example: Doe
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            type: PersonList
+            example: !include example.person_list.json
+

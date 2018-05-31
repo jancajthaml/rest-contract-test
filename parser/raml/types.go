@@ -15,7 +15,6 @@
 package raml
 
 // FIXME info query parameters and headers are redundant data-types
-
 type QueryParameters struct {
 	Data map[string]NamedParameter
 }

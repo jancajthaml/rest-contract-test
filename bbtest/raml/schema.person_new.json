@@ -1,0 +1,13 @@
+{
+  "title": "Create new Person",
+  "type": "object",
+  "description": "create new person",
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  }
+}
