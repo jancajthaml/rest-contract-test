@@ -245,7 +245,7 @@ type MediaType struct {
 
 func (ref *MediaType) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
 	var simple string
-	if err = unmarshaler(simple); err == nil {
+	if err = unmarshaler(&simple); err == nil {
 		ref.Data = make([]string, 1)
 		ref.Data[0] = simple
 		return
