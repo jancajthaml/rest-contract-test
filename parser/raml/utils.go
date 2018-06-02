@@ -197,16 +197,19 @@ func populateSecurityHeaders(dataset map[string]SecurityScheme) map[string]map[s
 	//fmt.Printf("headers security", dataset)
 
 	for k, v := range dataset {
-
+		//fmt.Println("pupulating headers", k)
 		//fmt.Println("headers security", k, v.DescribedBy.Headers)
 
 		if v.DescribedBy.Headers != nil {
-			//fmt.Println(k, v.DescribedBy.Headers)
+			//fmt.Println(">", k, v.DescribedBy.Headers.Data)
 
 			placeholder := make(map[string]string)
 
 			for name, parameter := range v.DescribedBy.Headers.Data {
+				//fmt.Println(">", k, name)
+
 				if parameter.Example != nil {
+					//fmt.Println(">", k, name, "has example")
 					switch typed := parameter.Example.(type) {
 					case string:
 						placeholder[name] = strings.Replace(typed, "\n", "", -1)
@@ -214,8 +217,10 @@ func populateSecurityHeaders(dataset map[string]SecurityScheme) map[string]map[s
 						placeholder[name] = strconv.Itoa(typed)
 					}
 				} else if parameter.Enum != nil {
+					//fmt.Println(">", k, name, "has enum")
 					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
 				} else if parameter.Type != nil {
+					//fmt.Println(">", k, name, "has type")
 					switch typed := parameter.Type.(type) {
 					case string:
 						placeholder[name] = typed
@@ -223,9 +228,12 @@ func populateSecurityHeaders(dataset map[string]SecurityScheme) map[string]map[s
 						placeholder[name] = strconv.Itoa(typed)
 					}
 					// FIXME now need to generate value based by validations and type
-				}
+				} //else {
+				//	fmt.Println(">", k, name, "has nothing :/")
+				//}
 			}
 			if len(placeholder) != 0 {
+				//fmt.Println("> something found", placeholder)
 				result[k] = placeholder
 			}
 

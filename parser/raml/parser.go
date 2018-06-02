@@ -81,12 +81,17 @@ func NewRaml(file string) (*model.Contract, error) {
 
 	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
 	eventualQueryParamsTraits := make(chan map[string]map[string]string)
-	eventualHeaderTraits := make(chan map[string]map[string]string)
-	eventualHeaderSecurity := make(chan map[string]map[string]string)
+	eventualHeadersTraits := make(chan map[string]map[string]string)
+	eventualHeadersSecurity := make(chan map[string]map[string]string)
 
+	// from securitySchemes
 	go func() {
 		eventualQueryParamsSecurity <- populateSecurityQueryParams(rootResource.SecuritySchemes)
 	}()
+	go func() {
+		eventualHeadersSecurity <- populateSecurityHeaders(rootResource.SecuritySchemes)
+	}()
+	// from traits
 	go func() {
 		if rootResource.Traits != nil {
 			eventualQueryParamsTraits <- populateTraitQueryParams(rootResource.Traits.Data)
@@ -96,25 +101,27 @@ func NewRaml(file string) (*model.Contract, error) {
 	}()
 	go func() {
 		if rootResource.Traits != nil {
-			eventualHeaderTraits <- populateTraitHeaders(rootResource.Traits.Data)
+			eventualHeadersTraits <- populateTraitHeaders(rootResource.Traits.Data)
 		} else {
-			eventualHeaderTraits <- make(map[string]map[string]string)
+			eventualHeadersTraits <- make(map[string]map[string]string)
 		}
 	}()
-	go func() {
-		eventualHeaderSecurity <- populateSecurityHeaders(rootResource.SecuritySchemes)
-	}()
 
+	// wait foall
 	queryParamsSecurity := <-eventualQueryParamsSecurity
 	queryParamsTraits := <-eventualQueryParamsTraits
-	headerTraits := <-eventualHeaderTraits
-	headerSecurity := <-eventualHeaderSecurity
+	headersTraits := <-eventualHeadersTraits
+	headersSecurity := <-eventualHeadersSecurity
 
-	fmt.Println(headerTraits)
-	fmt.Println(headerSecurity)
+	fmt.Println("headers:")
+	fmt.Println("> security", headersSecurity)
+	fmt.Println("> traits", headersTraits)
 
 	for path, v := range rootResource.Resources {
-		walk(contract, path, &v, make(map[string]string), queryParamsSecurity, queryParamsTraits)
+		walk(contract, path, &v,
+			make(map[string]string), make(map[string]string),
+			queryParamsSecurity, queryParamsTraits,
+			headersSecurity, headersTraits)
 	}
 
 	contract.Type = rootResource.RAMLVersion
@@ -122,16 +129,25 @@ func NewRaml(file string) (*model.Contract, error) {
 	return contract, nil
 }
 
-func walk(contract *model.Contract, path string, resource *Resource, queryStrings map[string]string, security map[string]map[string]string, traits map[string]map[string]string) {
+func walk(contract *model.Contract, path string, resource *Resource,
+	queryStrings map[string]string, headers map[string]string,
+	securityQueryStrings map[string]map[string]string, traitsQueryStrings map[string]map[string]string,
+	securityHeaders map[string]map[string]string, traitsHeaders map[string]map[string]string) {
 
 	var found = false
 	var qs map[string]string
+	var hds map[string]string
 
 	if resource.Is != nil {
 		for _, ref := range resource.Is.Data {
-			if val, ok := traits[ref]; ok {
+			if val, ok := traitsQueryStrings[ref]; ok {
 				for k, v := range val {
 					queryStrings[k] = v
+				}
+			}
+			if val, ok := traitsHeaders[ref]; ok {
+				for k, v := range val {
+					headers[k] = v
 				}
 			}
 		}
@@ -139,11 +155,17 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 
 	if resource.Get != nil {
 		qs = CopyMap(queryStrings)
+		hds = CopyMap(headers)
 		if resource.Get.Is != nil {
 			for _, ref := range resource.Get.Is.Data {
-				if val, ok := traits[ref]; ok {
+				if val, ok := traitsQueryStrings[ref]; ok {
 					for k, v := range val {
 						qs[k] = v
+					}
+				}
+				if val, ok := traitsHeaders[ref]; ok {
+					for k, v := range val {
+						hds[k] = v
 					}
 				}
 			}
@@ -153,17 +175,24 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 			Path:         path,
 			Method:       "GET",
 			QueryStrings: qs,
+			Headers:      hds,
 		})
 		found = true
 	}
 
 	if resource.Head != nil {
 		qs = CopyMap(queryStrings)
+		hds = CopyMap(headers)
 		if resource.Head.Is != nil {
 			for _, ref := range resource.Head.Is.Data {
-				if val, ok := traits[ref]; ok {
+				if val, ok := traitsQueryStrings[ref]; ok {
 					for k, v := range val {
 						qs[k] = v
+					}
+				}
+				if val, ok := traitsHeaders[ref]; ok {
+					for k, v := range val {
+						hds[k] = v
 					}
 				}
 			}
@@ -173,17 +202,24 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 			Path:         path,
 			Method:       "HEAD",
 			QueryStrings: qs,
+			Headers:      hds,
 		})
 		found = true
 	}
 
 	if resource.Post != nil {
 		qs = CopyMap(queryStrings)
+		hds = CopyMap(headers)
 		if resource.Post.Is != nil {
 			for _, ref := range resource.Post.Is.Data {
-				if val, ok := traits[ref]; ok {
+				if val, ok := traitsQueryStrings[ref]; ok {
 					for k, v := range val {
 						qs[k] = v
+					}
+				}
+				if val, ok := traitsHeaders[ref]; ok {
+					for k, v := range val {
+						hds[k] = v
 					}
 				}
 			}
@@ -193,17 +229,24 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 			Path:         path,
 			Method:       "POST",
 			QueryStrings: qs,
+			Headers:      hds,
 		})
 		found = true
 	}
 
 	if resource.Put != nil {
 		qs = CopyMap(queryStrings)
+		hds = CopyMap(headers)
 		if resource.Put.Is != nil {
 			for _, ref := range resource.Put.Is.Data {
-				if val, ok := traits[ref]; ok {
+				if val, ok := traitsQueryStrings[ref]; ok {
 					for k, v := range val {
 						qs[k] = v
+					}
+				}
+				if val, ok := traitsHeaders[ref]; ok {
+					for k, v := range val {
+						hds[k] = v
 					}
 				}
 			}
@@ -213,17 +256,24 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 			Path:         path,
 			Method:       "PUT",
 			QueryStrings: qs,
+			Headers:      hds,
 		})
 		found = true
 	}
 
 	if resource.Patch != nil {
 		qs = CopyMap(queryStrings)
+		hds = CopyMap(headers)
 		if resource.Patch.Is != nil {
 			for _, ref := range resource.Patch.Is.Data {
-				if val, ok := traits[ref]; ok {
+				if val, ok := traitsQueryStrings[ref]; ok {
 					for k, v := range val {
 						qs[k] = v
+					}
+				}
+				if val, ok := traitsHeaders[ref]; ok {
+					for k, v := range val {
+						hds[k] = v
 					}
 				}
 			}
@@ -233,17 +283,24 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 			Path:         path,
 			Method:       "PATCH",
 			QueryStrings: qs,
+			Headers:      hds,
 		})
 		found = true
 	}
 
 	if resource.Delete != nil {
 		qs = CopyMap(queryStrings)
+		hds = CopyMap(headers)
 		if resource.Delete.Is != nil {
 			for _, ref := range resource.Delete.Is.Data {
-				if val, ok := traits[ref]; ok {
+				if val, ok := traitsQueryStrings[ref]; ok {
 					for k, v := range val {
 						qs[k] = v
+					}
+				}
+				if val, ok := traitsHeaders[ref]; ok {
+					for k, v := range val {
+						hds[k] = v
 					}
 				}
 			}
@@ -252,20 +309,25 @@ func walk(contract *model.Contract, path string, resource *Resource, queryString
 			Path:         path,
 			Method:       "DELETE",
 			QueryStrings: qs,
+			Headers:      hds,
 		})
 		found = true
 	}
 
 	if !found {
 		qs = CopyMap(queryStrings)
+		hds = CopyMap(headers)
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			Path:         path,
 			Method:       "GET",
 			QueryStrings: qs,
+			Headers:      hds,
 		})
 	}
 
 	for k, v := range resource.Nested {
-		walk(contract, path+k, v, queryStrings, security, traits)
+		walk(contract, path+k, v, queryStrings, headers,
+			securityQueryStrings, traitsQueryStrings,
+			securityHeaders, traitsHeaders)
 	}
 }

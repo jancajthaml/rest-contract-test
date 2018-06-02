@@ -31,7 +31,7 @@ type Endpoint struct {
 	Path         string
 	Method       string
 	Responses    []Response
-	Headers      string
+	Headers      map[string]string
 	Request      Request
 	QueryStrings map[string]string
 }
@@ -48,5 +48,5 @@ func (ref Endpoint) String() string {
 	if len(qs) != 0 {
 		qs = "?" + qs
 	}
-	return fmt.Sprintf("%s %s%s", ref.Method, ref.Path, qs)
+	return fmt.Sprintf("%s %s%s ... %s", ref.Method, ref.Path, qs, ref.Headers)
 }
