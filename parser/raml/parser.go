@@ -27,11 +27,13 @@ import (
 
 	yaml "github.com/advance512/yaml" // INFO .regex support
 	//yaml "gopkg.in/yaml.v2"
+
+	gio "github.com/jancajthaml/rest-contract-test/io"
 )
 
 func ParseFile(filePath string) (*APIDefinition, error) {
 
-	mainFileBytes, err := ReadFileContents(filePath)
+	mainFileBytes, err := gio.ReadLocalFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +118,25 @@ func NewRaml(file string) (*model.Contract, error) {
 	headersTraits := <-eventualHeadersTraits
 	headersSecurity := <-eventualHeadersSecurity
 
+	var prefix = ""
+	if rootResource.BaseUri != nil && len(rootResource.BaseUri.Data) > 0 {
+		prefix = rootResource.BaseUri.Data
+	} else {
+		prefix = "http://localhost:8080"
+	}
+
+	if strings.HasPrefix(prefix, "http") {
+		// pass
+	} else if len(rootResource.Protocols) > 0 {
+		prefix = strings.ToLower(rootResource.Protocols[0]) + ":/" + prefix
+	} else {
+		prefix = "http:/" + prefix
+	}
+
+	fmt.Println("prefix", prefix)
+
 	for path, v := range rootResource.Resources {
-		walk(contract, path, &v,
+		walk(contract, prefix+path, &v,
 			make(map[string]string), make(map[string]string),
 			queryParamsSecurity, queryParamsTraits,
 			headersSecurity, headersTraits)
@@ -209,8 +228,12 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 		}
 	}
 
+	// FIXME in future better don't assume
+	headers["Content-Type"] = "application/json"
+	headers["Accept"] = "application/json"
+
 	contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-		Path:         path,
+		URI:          path,
 		Method:       kind,
 		QueryStrings: queryStrings,
 		Headers:      headers,
@@ -308,7 +331,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 		qs = CopyMap(queryStrings)
 		hds = CopyMap(headers)
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-			Path:         path,
+			URI:          path,
 			Method:       "GET",
 			QueryStrings: qs,
 			Headers:      hds,

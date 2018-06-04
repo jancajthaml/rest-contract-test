@@ -14,25 +14,22 @@
 
 package model
 
-import "fmt"
-
 type Response struct {
-	Example string
-	Schema  string
+	Example string // FIXME example is a wrong name
+	Schema  string // FIXME not string but interface{} instead ?
 }
 
 type Request struct {
-	Example string
-	Schema  string
-	Query   string
+	Example string // FIXME example is a wrong name
+	Schema  string // FIXME not string but interface{} instead ?
 }
 
 type Endpoint struct {
-	Path         string
+	URI          string
 	Method       string
-	Responses    []Response
+	Responses    []Response // FIXME map HTTP_CODE -> RESPONSE
 	Headers      map[string]string
-	Request      Request
+	Request      Request // FIXME optional ?
 	QueryStrings map[string]string
 }
 
@@ -48,5 +45,27 @@ func (ref Endpoint) String() string {
 	if len(qs) != 0 {
 		qs = "?" + qs
 	}
-	return fmt.Sprintf("%s %s%s ... %s", ref.Method, ref.Path, qs, ref.Headers)
+
+	// -H "Content-Type: application/json"
+
+	cmd := "curl -v -L "
+
+	switch ref.Method {
+	case "PUT":
+		cmd += "-X PUT "
+	case "POST":
+		cmd += "-X POST "
+	case "PATCH":
+		cmd += "-X PATCH "
+	case "DELETE":
+		cmd += "-X DELETE "
+	}
+
+	for k, v := range ref.Headers {
+		cmd += "-H \"" + k + ":" + v + "\" "
+	}
+
+	//--data '{"username":"xyz","password":"xyz"}' \
+
+	return cmd + ref.URI + qs
 }

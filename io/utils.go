@@ -15,8 +15,16 @@
 package io
 
 import (
+	"encoding/json"
+	"encoding/xml"
+	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
+
+	yaml "github.com/advance512/yaml" // INFO .regex support
+	//yaml "gopkg.in/yaml.v2"
 )
 
 func IsJSON(filename string, data []byte) bool {
@@ -109,46 +117,74 @@ func GetDocumentType(file string) string {
 	}
 }
 
-/*
-func getRamlVersion(resource string) string {
+// ReadFileFully reads whole file given absolute path
+func ReadLocalFile(filePath string) ([]byte, error) {
+	if len(filePath) == 0 {
+		return nil, fmt.Errorf("File cannot be nil: %s", filePath)
+	}
 
-	// FIXME assuming that resource is local file
-	file := resource
-
-	// FIXME RAML from local file below
-	f, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
+	f, err := os.OpenFile(filePath, os.O_RDONLY, os.ModePerm)
 	if err != nil {
-		return ""
+		return nil, err
 	}
 	defer f.Close()
 
 	fi, err := f.Stat()
 	if err != nil {
-		return ""
+		return nil, err
 	}
 
-	size := fi.Size()
-	if size > 20 {
-		size = 20
-	}
-	buf := make([]byte, size)
-	_, err = f.Read(buf)
+	data := make([]byte, fi.Size())
+	_, err = f.Read(data)
 	if err != nil && err != io.EOF {
-		return ""
+		return nil, err
 	}
 
-	switch strings.Split(string(buf), "\n")[0] { // FIXME do this better
+	// FIXME have knowledge of what is target format, do not assume yaml
 
-	case "#%RAML 0.4":
-		return "0.4"
+	if IsJSON(filePath, data) {
+		var body interface{}
+		if err := json.Unmarshal(data, &body); err != nil {
+			return nil, err
+		}
 
-	case "#%RAML 0.8":
-		return "0.8"
+		body = untypedConvert(body)
+		if b, err := yaml.Marshal(body); err != nil {
+			return nil, err
+		} else {
+			b = append([]byte("\n"), b...)
+			return b, nil
+		}
+	} else if IsXML(filePath, data) {
+		var body interface{}
+		if err := xml.Unmarshal(data, &body); err != nil {
+			return nil, err
+		}
 
-	case "#%RAML 1.0":
-		return "1.0"
-
-	default:
-		return ""
+		body = untypedConvert(body)
+		if b, err := yaml.Marshal(body); err != nil {
+			return nil, err
+		} else {
+			b = append([]byte("\n"), b...)
+			return b, nil
+		}
 	}
-}*/
+
+	return data, nil
+}
+
+func untypedConvert(i interface{}) interface{} {
+	switch x := i.(type) {
+	case map[interface{}]interface{}:
+		m2 := map[string]interface{}{}
+		for k, v := range x {
+			m2[k.(string)] = untypedConvert(v)
+		}
+		return m2
+	case []interface{}:
+		for i, v := range x {
+			x[i] = untypedConvert(v)
+		}
+	}
+	return i
+}

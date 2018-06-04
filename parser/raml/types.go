@@ -93,7 +93,7 @@ type Body struct {
 	Description    string                    `yaml:"description"`
 	Example        interface{}               `yaml:"example"`
 	FormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers        *Headers                  `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Headers        *Headers                  `yaml:"headers"`
 }
 
 type Bodies struct {
@@ -102,7 +102,7 @@ type Bodies struct {
 	DefaultDescription    string                    `yaml:"description"`
 	DefaultExample        interface{}               `yaml:"example"`
 	DefaultFormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers               *Headers                  `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Headers               *Headers                  `yaml:"headers"`
 	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
 }
 
@@ -111,14 +111,14 @@ type LiteralBodies struct {
 	DefaultDescription    string                    `yaml:"description"`
 	DefaultExample        interface{}               `yaml:"example"`
 	DefaultFormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers               *Headers                  `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Headers               *Headers                  `yaml:"headers"`
 	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
 }
 
 type Response struct {
 	HTTPCode    int
 	Description string
-	Headers     *Headers `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Headers     *Headers `yaml:"headers"`
 	Bodies      Bodies   `yaml:"body"`
 }
 
@@ -173,21 +173,21 @@ type ResourceTypes struct {
 }
 
 func (ref *ResourceTypes) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	ref.Data = make(map[string]interface{})
+	var anything interface{}
+	if err = unmarshaler(&anything); err == nil {
 
-	if err = unmarshaler(ref.Data); err == nil {
-		return
-	}
+		switch hinted := anything.(type) {
 
-	data := make([]map[string]interface{}, 0)
-	if err = unmarshaler(&data); err == nil {
-		for _, subset := range data {
-			for k, v := range subset {
-				ref.Data[k] = v
+		case map[string]interface{}:
+			ref.Data = hinted
+
+		case []map[string]interface{}:
+			for _, subset := range hinted {
+				for k, v := range subset {
+					ref.Data[k] = v
+				}
 			}
 		}
-
-		return
 	}
 
 	return
@@ -198,21 +198,21 @@ type Schemas struct {
 }
 
 func (ref *Schemas) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	ref.Data = make(map[string]interface{})
+	var anything interface{}
+	if err = unmarshaler(&anything); err == nil {
 
-	if err = unmarshaler(ref.Data); err == nil {
-		return
-	}
+		switch hinted := anything.(type) {
 
-	data := make([]map[string]interface{}, 0)
-	if err = unmarshaler(&data); err == nil {
-		for _, subset := range data {
-			for k, v := range subset {
-				ref.Data[k] = v
+		case map[string]interface{}:
+			ref.Data = hinted
+
+		case []map[string]interface{}:
+			for _, subset := range hinted {
+				for k, v := range subset {
+					ref.Data[k] = v
+				}
 			}
 		}
-
-		return
 	}
 
 	return
@@ -223,17 +223,19 @@ type BaseURI struct {
 }
 
 func (ref *BaseURI) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	simple := new(string)
-	if err = unmarshaler(simple); err == nil {
-		ref.Data = *simple
-		return
-	}
-	composite := make(map[string]interface{})
-	if err = unmarshaler(composite); err == nil {
-		if val, ok := composite["value"]; ok {
-			ref.Data = val.(string)
+	var anything interface{}
+	if err = unmarshaler(&anything); err == nil {
+
+		switch hinted := anything.(type) {
+
+		case map[string]interface{}:
+			if val, ok := hinted["value"]; ok {
+				ref.Data = val.(string)
+			}
+
+		case string:
+			ref.Data = hinted
 		}
-		return
 	}
 
 	return
@@ -244,15 +246,19 @@ type MediaType struct {
 }
 
 func (ref *MediaType) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
-	var simple string
-	if err = unmarshaler(&simple); err == nil {
-		ref.Data = make([]string, 1)
-		ref.Data[0] = simple
-		return
-	}
+	var anything interface{}
+	if err = unmarshaler(&anything); err == nil {
 
-	if err = unmarshaler(&(ref.Data)); err == nil {
-		return
+		switch hinted := anything.(type) {
+
+		case []string:
+			ref.Data = hinted
+
+		case string:
+			ref.Data = make([]string, 1)
+			ref.Data[0] = hinted
+
+		}
 	}
 
 	return
@@ -320,7 +326,7 @@ func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) 
 
 type Trait struct {
 	Bodies                  Bodies                 `yaml:"body"`
-	Headers                 *Headers               `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Headers                 *Headers               `yaml:"headers"`
 	Responses               map[int]Response       `yaml:"responses"`
 	QueryParameters         *QueryParameters       `yaml:"queryParameters"`
 	Protocols               []string               `yaml:"protocols"`
@@ -331,11 +337,10 @@ type Trait struct {
 }
 
 type ResourceTypeMethod struct {
-	Name        string
-	Description string
-	Bodies      Bodies `yaml:"body"`
-
-	Headers         *Headers         `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
+	Name            string
+	Description     string
+	Bodies          Bodies           `yaml:"body"`
+	Headers         *Headers         `yaml:"headers"`
 	Responses       map[int]Response `yaml:"responses"`
 	QueryParameters *QueryParameters `yaml:"queryParameters"`
 	Protocols       []string         `yaml:"protocols"`
@@ -345,16 +350,16 @@ type ResourceType struct {
 	Name                      string
 	Usage                     string
 	Description               string
-	UriParameters             map[string]NamedParameter `yaml:"uriParameters"`
-	BaseUriParameters         map[string]NamedParameter `yaml:"baseUriParameters"`
+	UriParameters             map[string]NamedParameter `yaml:"uriParameters"`     // FIXME ignored now, need example
+	BaseUriParameters         map[string]NamedParameter `yaml:"baseUriParameters"` // FIXME ignored now, need example
 	Get                       *ResourceTypeMethod       `yaml:"get"`
 	Head                      *ResourceTypeMethod       `yaml:"head"`
 	Post                      *ResourceTypeMethod       `yaml:"post"`
 	Put                       *ResourceTypeMethod       `yaml:"put"`
 	Delete                    *ResourceTypeMethod       `yaml:"delete"`
 	Patch                     *ResourceTypeMethod       `yaml:"patch"`
-	OptionalUriParameters     map[string]NamedParameter `yaml:"uriParameters?"`
-	OptionalBaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters?"`
+	OptionalUriParameters     map[string]NamedParameter `yaml:"uriParameters?"`     // FIXME ignored now, need example
+	OptionalBaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters?"` // FIXME ignored now, need example
 	OptionalGet               *ResourceTypeMethod       `yaml:"get?"`
 	OptionalHead              *ResourceTypeMethod       `yaml:"head?"`
 	OptionalPost              *ResourceTypeMethod       `yaml:"post?"`
@@ -396,8 +401,8 @@ type Method struct {
 
 type Resource struct {
 	SecuredBy         *Reference                `yaml:"securedBy"`
-	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"`
-	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
+	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"` // FIXME ignored now, need example
+	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`     // FIXME ignored now, need example
 	Type              *DefinitionChoice         `yaml:"type"`
 	Is                *Reference                `yaml:"is"`
 	Get               *Method                   `yaml:"get"`
@@ -414,11 +419,13 @@ type APIDefinition struct {
 	Title             string                    `yaml:"title"`
 	Version           string                    `yaml:"version"`
 	BaseUri           *BaseURI                  `yaml:"baseUri"`
-	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"`
-	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`
-	Protocols         []string                  `yaml:"protocols"`
-	MediaType         *MediaType                `yaml:"mediaType"`
-	SecuritySchemes   map[string]SecurityScheme `yaml:"securitySchemes"`
+	BaseUriParameters map[string]NamedParameter `yaml:"baseUriParameters"` // FIXME ignored now, need example
+	UriParameters     map[string]NamedParameter `yaml:"uriParameters"`     // FIXME ignored now, need example
+
+	Protocols []string `yaml:"protocols"` // FIXME
+
+	MediaType       *MediaType                `yaml:"mediaType"`
+	SecuritySchemes map[string]SecurityScheme `yaml:"securitySchemes"`
 
 	SecuredBy     *Reference      `yaml:"securedBy"`
 	Documentation []Documentation `yaml:"documentation"`

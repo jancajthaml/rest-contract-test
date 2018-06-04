@@ -37,7 +37,7 @@ func CmdTest(c *cli.Context) error {
 	fmt.Printf("Type: %s\n", contract.Type)
 
 	for _, endpoint := range contract.Endpoints {
-		fmt.Printf("Endpoint: %s\n", endpoint)
+		fmt.Println(endpoint)
 	}
 
 	return nil

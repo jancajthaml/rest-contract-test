@@ -19,15 +19,11 @@ import (
 	"bytes"
 	"strconv"
 
-	"encoding/json"
-	"encoding/xml"
-
-	yaml "github.com/advance512/yaml" // INFO .regex support
+	// INFO .regex support
 	//yaml "gopkg.in/yaml.v2"
 
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"path/filepath"
 	"strings"
@@ -38,71 +34,6 @@ import (
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
-}
-
-func untypedConvert(i interface{}) interface{} {
-	switch x := i.(type) {
-	case map[interface{}]interface{}:
-		m2 := map[string]interface{}{}
-		for k, v := range x {
-			m2[k.(string)] = untypedConvert(v)
-		}
-		return m2
-	case []interface{}:
-		for i, v := range x {
-			x[i] = untypedConvert(v)
-		}
-	}
-	return i
-}
-
-func ReadFileContents(filePath string) ([]byte, error) {
-
-	// FIXME better and faster
-
-	if len(filePath) == 0 {
-		return nil, fmt.Errorf("File cannot be nil: %s", filePath)
-	}
-
-	// FIXME faster file read
-	data, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil,
-			fmt.Errorf("Could not read file %s (Error: %s)", filePath, err.Error())
-	}
-
-	if gio.IsJSON(filePath, data) {
-
-		var body interface{}
-		if err := json.Unmarshal(data, &body); err != nil {
-			return nil, err
-		}
-
-		body = untypedConvert(body)
-		if b, err := yaml.Marshal(body); err != nil {
-			return nil, err
-		} else {
-			b = append([]byte("\n"), b...)
-			return b, nil
-		}
-	}
-
-	if gio.IsXML(filePath, data) {
-		var body interface{}
-		if err := xml.Unmarshal(data, &body); err != nil {
-			return nil, err
-		}
-
-		body = untypedConvert(body)
-		if b, err := yaml.Marshal(body); err != nil {
-			return nil, err
-		} else {
-			b = append([]byte("\n"), b...)
-			return b, nil
-		}
-	}
-
-	return data, nil
 }
 
 func CopyMap(ref map[string]string) map[string]string {
@@ -285,8 +216,7 @@ func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, er
 
 			preprocessedContents.Write([]byte(line[:idx]))
 
-			includedContents, err := ReadFileContents(filepath.Join(workingDirectory, includedFile))
-
+			includedContents, err := gio.ReadLocalFile(filepath.Join(workingDirectory, includedFile))
 			if err != nil {
 				return nil,
 					fmt.Errorf("Error including file %s:\n    %s",
