@@ -63,9 +63,10 @@ func RandValue(kind string) string {
 		}
 
 		l := len(letters)
+		mod := uint8(l)
 		for pos := range output {
 			random := uint8(randomness[pos])
-			randomPos := random % uint8(l)
+			randomPos := random % mod
 			output[pos] = letters[randomPos]
 		}
 		return string(output)
@@ -79,9 +80,10 @@ func RandValue(kind string) string {
 		}
 
 		l := len(numbers)
+		mod := uint8(l)
 		for pos := range output {
 			random := uint8(randomness[pos])
-			randomPos := random % uint8(l)
+			randomPos := random % mod
 			output[pos] = numbers[randomPos]
 		}
 		return string(output)
@@ -221,13 +223,16 @@ func populateTraitHeaders(dataset map[string]*Trait) map[string]map[string]strin
 	return result
 }
 
+/*
 func populateSecurityBodies(dataset map[string]SecurityScheme) map[string][]byte {
 
 	result := make(map[string][]byte)
 
-	/*
 	for k, v := range dataset {
-		if v.DescribedBy.Headers != nil {
+		if v.DescribedBy.Bodies != nil {
+			fmt.Println("in security", k)
+			fmt.Println(v.DescribedBy.Bodies)
+
 			placeholder := make(map[string]string)
 
 			for name, parameter := range v.DescribedBy.Headers.Data {
@@ -250,19 +255,21 @@ func populateSecurityBodies(dataset map[string]SecurityScheme) map[string][]byte
 
 		}
 	}
-	*/
 
 	return result
-}
+}*/
 
+/*
 func populateTraitBodies(dataset map[string]*Trait) map[string][]byte {
 
 	result := make(map[string][]byte)
 
-	/*
 	for k, v := range dataset {
 
-		if v.Headers != nil {
+		if v.Bodies != nil {
+			fmt.Println("in traits", k)
+			fmt.Println(v.Bodies)
+
 			placeholder := make(map[string]string)
 
 			for name, parameter := range v.Headers.Data {
@@ -285,9 +292,10 @@ func populateTraitBodies(dataset map[string]*Trait) map[string][]byte {
 
 		}
 	}
-	*/
+
 	return result
 }
+*/
 
 //
 

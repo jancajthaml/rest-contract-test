@@ -90,8 +90,8 @@ func NewRaml(file string) (*model.Contract, error) {
 	eventualHeadersTraits := make(chan map[string]map[string]string)
 	eventualHeadersSecurity := make(chan map[string]map[string]string)
 
-	eventualBodiesTraits := make(chan map[string][]byte)
-	eventualBodiesSecurity := make(chan map[string][]byte)
+	//eventualBodiesTraits := make(chan map[string][]byte)
+	//eventualBodiesSecurity := make(chan map[string][]byte)
 
 	// from securitySchemes
 	go func() {
@@ -100,9 +100,11 @@ func NewRaml(file string) (*model.Contract, error) {
 	go func() {
 		eventualHeadersSecurity <- populateSecurityHeaders(rootResource.SecuritySchemes)
 	}()
+	/*
 	go func() {
 		eventualBodiesSecurity <- populateSecurityBodies(rootResource.SecuritySchemes)
-	}()
+	}()*/
+
 	// from traits
 	go func() {
 		if rootResource.Traits != nil {
@@ -119,25 +121,26 @@ func NewRaml(file string) (*model.Contract, error) {
 		}
 	}()
 
+	/*
 	go func() {
 		if rootResource.Traits != nil {
 			eventualBodiesTraits <- populateTraitBodies(rootResource.Traits.Data)
 		} else {
 			eventualBodiesTraits <- make(map[string][]byte)
 		}
-	}()
+	}()*/
 
 	// wait foall
 	queryParamsSecurity := <-eventualQueryParamsSecurity
 	queryParamsTraits := <-eventualQueryParamsTraits
 	headersTraits := <-eventualHeadersTraits
-	bodiesTraits := <-eventualBodiesTraits
+	//bodiesTraits := <-eventualBodiesTraits
 	headersSecurity := <-eventualHeadersSecurity
-	bodiesSecurity := <-eventualBodiesSecurity
+	//bodiesSecurity := <-eventualBodiesSecurity
 
-	fmt.Println("bodies:")
-	fmt.Println(bodiesTraits)
-	fmt.Println(bodiesSecurity)
+	//fmt.Println("bodies:")
+	//fmt.Println(bodiesTraits)
+	//fmt.Println(bodiesSecurity)
 
 	var prefix = ""
 	if rootResource.BaseUri != nil && len(rootResource.BaseUri.Data) > 0 {
@@ -239,6 +242,17 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 	// FIXME in future better don't assume
 	headers["Content-Type"] = "application/json"
 	headers["Accept"] = "application/json"
+
+	if method.Bodies != nil {
+		if method.Bodies.Referenced != nil {
+			fmt.Println("body by reference")
+		} else {
+			fmt.Println("body by literal")
+		}
+		//for code, request := range method.Bodies {
+		//	fmt.Println(path, code, request)
+		//}
+	}
 
 	contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 		URI:          path,

@@ -29,16 +29,18 @@ func CmdTest(c *cli.Context) error {
 	}
 
 	// FIXME determine if resource is url or local file
-	contract, err := parser.FromFile(resource)
+	_, err := parser.FromFile(resource)
 	if err != nil {
 		return err
 	}
+	/*
 	fmt.Printf("Source: %s\n", contract.Source)
 	fmt.Printf("Type: %s\n", contract.Type)
 
 	for _, endpoint := range contract.Endpoints {
 		fmt.Println(endpoint)
 	}
+	*/
 
 	return nil
 }

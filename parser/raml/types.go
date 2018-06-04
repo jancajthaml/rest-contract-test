@@ -123,7 +123,7 @@ type Response struct {
 	HTTPCode    int
 	Description string
 	Headers     *Headers `yaml:"headers"`
-	Bodies      Bodies   `yaml:"body"`
+	Bodies      *Bodies  `yaml:"body"`
 }
 
 type Traits struct {
@@ -333,12 +333,12 @@ func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) 
 }
 
 type Trait struct {
-	Bodies                  Bodies                 `yaml:"body"`
+	Bodies                  *Bodies                 `yaml:"body"`
 	Headers                 *Headers               `yaml:"headers"`
 	Responses               map[int]Response       `yaml:"responses"`
 	QueryParameters         *QueryParameters       `yaml:"queryParameters"`
 	Protocols               []string               `yaml:"protocols"`
-	OptionalBodies          Bodies                 `yaml:"body?"`
+	OptionalBodies          *Bodies                 `yaml:"body?"`
 	OptionalHeaders         map[string]interface{} `yaml:"headers?"`
 	OptionalResponses       map[int]Response       `yaml:"responses?"`
 	OptionalQueryParameters map[string]interface{} `yaml:"queryParameters?"`
@@ -347,7 +347,7 @@ type Trait struct {
 type ResourceTypeMethod struct {
 	Name            string
 	Description     string
-	Bodies          Bodies           `yaml:"body"`
+	Bodies          *Bodies           `yaml:"body"`
 	Headers         *Headers         `yaml:"headers"`
 	Responses       map[int]Response `yaml:"responses"`
 	QueryParameters *QueryParameters `yaml:"queryParameters"`
@@ -378,10 +378,8 @@ type ResourceType struct {
 
 // FIXME name differently
 type SecuritySchemeMethod struct {
-	Bodies Bodies `yaml:"body"`
-
-	Headers *Headers `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
-
+	Bodies *Bodies `yaml:"body"`
+	Headers *Headers `yaml:"headers"`
 	Responses       map[int]Response `yaml:"responses"`
 	QueryParameters *QueryParameters `yaml:"queryParameters"`
 }
@@ -402,7 +400,7 @@ type Method struct {
 	SecuredBy       *Reference       `yaml:"securedBy"`
 	Headers         *Headers         `yaml:"headers"`
 	QueryParameters *QueryParameters `yaml:"queryParameters"`
-	Bodies          Bodies           `yaml:"body"`
+	Bodies          *Bodies           `yaml:"body"`
 	Responses       map[int]Response `yaml:"responses"`
 	Is              *Reference       `yaml:"is"`
 }
