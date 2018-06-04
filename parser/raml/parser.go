@@ -18,7 +18,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/rand"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/jancajthaml/rest-contract-test/model"
 
@@ -113,10 +116,6 @@ func NewRaml(file string) (*model.Contract, error) {
 	headersTraits := <-eventualHeadersTraits
 	headersSecurity := <-eventualHeadersSecurity
 
-	fmt.Println("headers:")
-	fmt.Println("> security", headersSecurity)
-	fmt.Println("> traits", headersTraits)
-
 	for path, v := range rootResource.Resources {
 		walk(contract, path, &v,
 			make(map[string]string), make(map[string]string),
@@ -127,6 +126,95 @@ func NewRaml(file string) (*model.Contract, error) {
 	contract.Type = rootResource.RAMLVersion
 
 	return contract, nil
+}
+
+func processMethod(contract *model.Contract, path string, kind string, method *Method,
+	queryStrings map[string]string, headers map[string]string,
+	securityQueryStrings map[string]map[string]string, traitsQueryStrings map[string]map[string]string,
+	securityHeaders map[string]map[string]string, traitsHeaders map[string]map[string]string) {
+
+	if method.Is != nil {
+		for _, ref := range method.Is.Data {
+			if val, ok := traitsQueryStrings[ref]; ok {
+				for k, v := range val {
+					queryStrings[k] = v
+				}
+			}
+			if val, ok := traitsHeaders[ref]; ok {
+				for k, v := range val {
+					headers[k] = v
+				}
+			}
+		}
+	}
+
+	if method.SecuredBy != nil {
+		for _, ref := range method.SecuredBy.Data {
+			if val, ok := securityQueryStrings[ref]; ok {
+				for k, v := range val {
+					queryStrings[k] = v
+				}
+			}
+			if val, ok := securityHeaders[ref]; ok {
+				for k, v := range val {
+					headers[k] = v
+				}
+			}
+		}
+	}
+
+	if method.Headers != nil {
+		for name, parameter := range method.Headers.Data {
+			if parameter.Example != nil {
+				switch typed := parameter.Example.(type) {
+				case string:
+					headers[name] = strings.Replace(typed, "\n", "", -1)
+				case int:
+					headers[name] = strconv.Itoa(typed)
+				}
+			} else if parameter.Enum != nil {
+				headers[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+			} else if parameter.Type != nil {
+				switch typed := parameter.Type.(type) {
+				case string:
+					headers[name] = typed
+				case int:
+					headers[name] = strconv.Itoa(typed)
+				}
+				// FIXME now need to generate value based by validations and type
+			}
+		}
+	}
+
+	if method.QueryParameters != nil {
+		for name, parameter := range method.QueryParameters.Data {
+			if parameter.Example != nil {
+				switch typed := parameter.Example.(type) {
+				case string:
+					queryStrings[name] = strings.Replace(typed, "\n", "", -1)
+				case int:
+					queryStrings[name] = strconv.Itoa(typed)
+				}
+			} else if parameter.Enum != nil {
+				queryStrings[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+			} else if parameter.Type != nil {
+				switch typed := parameter.Type.(type) {
+				case string:
+					queryStrings[name] = typed
+				case int:
+					queryStrings[name] = strconv.Itoa(typed)
+				}
+				// FIXME now need to generate value based by validations and type
+			}
+		}
+	}
+
+	contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+		Path:         path,
+		Method:       kind,
+		QueryStrings: queryStrings,
+		Headers:      headers,
+	})
 }
 
 func walk(contract *model.Contract, path string, resource *Resource,
@@ -153,164 +241,66 @@ func walk(contract *model.Contract, path string, resource *Resource,
 		}
 	}
 
-	if resource.Get != nil {
-		qs = CopyMap(queryStrings)
-		hds = CopyMap(headers)
-		if resource.Get.Is != nil {
-			for _, ref := range resource.Get.Is.Data {
-				if val, ok := traitsQueryStrings[ref]; ok {
-					for k, v := range val {
-						qs[k] = v
-					}
+	if resource.SecuredBy != nil {
+		for _, ref := range resource.SecuredBy.Data {
+			if val, ok := securityQueryStrings[ref]; ok {
+				for k, v := range val {
+					queryStrings[k] = v
 				}
-				if val, ok := traitsHeaders[ref]; ok {
-					for k, v := range val {
-						hds[k] = v
-					}
+			}
+			if val, ok := securityHeaders[ref]; ok {
+				for k, v := range val {
+					headers[k] = v
 				}
 			}
 		}
-		// FIXME there can be queryParams inlined
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-			Path:         path,
-			Method:       "GET",
-			QueryStrings: qs,
-			Headers:      hds,
-		})
+	}
+
+	if resource.Get != nil {
+		processMethod(contract, path, "GET", resource.Get,
+			CopyMap(queryStrings), CopyMap(headers),
+			securityQueryStrings, traitsQueryStrings,
+			securityHeaders, traitsHeaders)
 		found = true
 	}
 
 	if resource.Head != nil {
-		qs = CopyMap(queryStrings)
-		hds = CopyMap(headers)
-		if resource.Head.Is != nil {
-			for _, ref := range resource.Head.Is.Data {
-				if val, ok := traitsQueryStrings[ref]; ok {
-					for k, v := range val {
-						qs[k] = v
-					}
-				}
-				if val, ok := traitsHeaders[ref]; ok {
-					for k, v := range val {
-						hds[k] = v
-					}
-				}
-			}
-		}
-		// FIXME there can be queryParams inlined
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-			Path:         path,
-			Method:       "HEAD",
-			QueryStrings: qs,
-			Headers:      hds,
-		})
+		processMethod(contract, path, "HEAD", resource.Head,
+			CopyMap(queryStrings), CopyMap(headers),
+			securityQueryStrings, traitsQueryStrings,
+			securityHeaders, traitsHeaders)
 		found = true
 	}
 
 	if resource.Post != nil {
-		qs = CopyMap(queryStrings)
-		hds = CopyMap(headers)
-		if resource.Post.Is != nil {
-			for _, ref := range resource.Post.Is.Data {
-				if val, ok := traitsQueryStrings[ref]; ok {
-					for k, v := range val {
-						qs[k] = v
-					}
-				}
-				if val, ok := traitsHeaders[ref]; ok {
-					for k, v := range val {
-						hds[k] = v
-					}
-				}
-			}
-		}
-		// FIXME there can be queryParams inlined
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-			Path:         path,
-			Method:       "POST",
-			QueryStrings: qs,
-			Headers:      hds,
-		})
+		processMethod(contract, path, "POST", resource.Post,
+			CopyMap(queryStrings), CopyMap(headers),
+			securityQueryStrings, traitsQueryStrings,
+			securityHeaders, traitsHeaders)
 		found = true
 	}
 
 	if resource.Put != nil {
-		qs = CopyMap(queryStrings)
-		hds = CopyMap(headers)
-		if resource.Put.Is != nil {
-			for _, ref := range resource.Put.Is.Data {
-				if val, ok := traitsQueryStrings[ref]; ok {
-					for k, v := range val {
-						qs[k] = v
-					}
-				}
-				if val, ok := traitsHeaders[ref]; ok {
-					for k, v := range val {
-						hds[k] = v
-					}
-				}
-			}
-		}
-		// FIXME there can be queryParams inlined
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-			Path:         path,
-			Method:       "PUT",
-			QueryStrings: qs,
-			Headers:      hds,
-		})
+		processMethod(contract, path, "PUT", resource.Put,
+			CopyMap(queryStrings), CopyMap(headers),
+			securityQueryStrings, traitsQueryStrings,
+			securityHeaders, traitsHeaders)
 		found = true
 	}
 
 	if resource.Patch != nil {
-		qs = CopyMap(queryStrings)
-		hds = CopyMap(headers)
-		if resource.Patch.Is != nil {
-			for _, ref := range resource.Patch.Is.Data {
-				if val, ok := traitsQueryStrings[ref]; ok {
-					for k, v := range val {
-						qs[k] = v
-					}
-				}
-				if val, ok := traitsHeaders[ref]; ok {
-					for k, v := range val {
-						hds[k] = v
-					}
-				}
-			}
-		}
-		// FIXME there can be queryParams inlined
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-			Path:         path,
-			Method:       "PATCH",
-			QueryStrings: qs,
-			Headers:      hds,
-		})
+		processMethod(contract, path, "PATCH", resource.Patch,
+			CopyMap(queryStrings), CopyMap(headers),
+			securityQueryStrings, traitsQueryStrings,
+			securityHeaders, traitsHeaders)
 		found = true
 	}
 
 	if resource.Delete != nil {
-		qs = CopyMap(queryStrings)
-		hds = CopyMap(headers)
-		if resource.Delete.Is != nil {
-			for _, ref := range resource.Delete.Is.Data {
-				if val, ok := traitsQueryStrings[ref]; ok {
-					for k, v := range val {
-						qs[k] = v
-					}
-				}
-				if val, ok := traitsHeaders[ref]; ok {
-					for k, v := range val {
-						hds[k] = v
-					}
-				}
-			}
-		}
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-			Path:         path,
-			Method:       "DELETE",
-			QueryStrings: qs,
-			Headers:      hds,
-		})
+		processMethod(contract, path, "DELETE", resource.Delete,
+			CopyMap(queryStrings), CopyMap(headers),
+			securityQueryStrings, traitsQueryStrings,
+			securityHeaders, traitsHeaders)
 		found = true
 	}
 

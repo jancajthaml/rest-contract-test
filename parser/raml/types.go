@@ -383,13 +383,11 @@ type SecurityScheme struct {
 }
 
 type Method struct {
-	Name        string
-	Description string
-	SecuredBy   *Reference `yaml:"securedBy"`
-
-	Headers *Headers `yaml:"headers"` //map[string]NamedParameter `yaml:"headers"`
-
+	Name            string
+	Description     string
 	Protocols       []string         `yaml:"protocols"`
+	SecuredBy       *Reference       `yaml:"securedBy"`
+	Headers         *Headers         `yaml:"headers"`
 	QueryParameters *QueryParameters `yaml:"queryParameters"`
 	Bodies          Bodies           `yaml:"body"`
 	Responses       map[int]Response `yaml:"responses"`
