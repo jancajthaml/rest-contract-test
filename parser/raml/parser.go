@@ -86,8 +86,12 @@ func NewRaml(file string) (*model.Contract, error) {
 
 	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
 	eventualQueryParamsTraits := make(chan map[string]map[string]string)
+	
 	eventualHeadersTraits := make(chan map[string]map[string]string)
 	eventualHeadersSecurity := make(chan map[string]map[string]string)
+
+	eventualBodiesTraits := make(chan map[string][]byte)
+	eventualBodiesSecurity := make(chan map[string][]byte)
 
 	// from securitySchemes
 	go func() {
@@ -95,6 +99,9 @@ func NewRaml(file string) (*model.Contract, error) {
 	}()
 	go func() {
 		eventualHeadersSecurity <- populateSecurityHeaders(rootResource.SecuritySchemes)
+	}()
+	go func() {
+		eventualBodiesSecurity <- populateSecurityBodies(rootResource.SecuritySchemes)
 	}()
 	// from traits
 	go func() {
@@ -112,11 +119,25 @@ func NewRaml(file string) (*model.Contract, error) {
 		}
 	}()
 
+	go func() {
+		if rootResource.Traits != nil {
+			eventualBodiesTraits <- populateTraitBodies(rootResource.Traits.Data)
+		} else {
+			eventualBodiesTraits <- make(map[string][]byte)
+		}
+	}()
+
 	// wait foall
 	queryParamsSecurity := <-eventualQueryParamsSecurity
 	queryParamsTraits := <-eventualQueryParamsTraits
 	headersTraits := <-eventualHeadersTraits
+	bodiesTraits := <-eventualBodiesTraits
 	headersSecurity := <-eventualHeadersSecurity
+	bodiesSecurity := <-eventualBodiesSecurity
+
+	fmt.Println("bodies:")
+	fmt.Println(bodiesTraits)
+	fmt.Println(bodiesSecurity)
 
 	var prefix = ""
 	if rootResource.BaseUri != nil && len(rootResource.BaseUri.Data) > 0 {
@@ -132,8 +153,6 @@ func NewRaml(file string) (*model.Contract, error) {
 	} else {
 		prefix = "http:/" + prefix
 	}
-
-	fmt.Println("prefix", prefix)
 
 	for path, v := range rootResource.Resources {
 		walk(contract, prefix+path, &v,
@@ -193,14 +212,8 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 				}
 			} else if parameter.Enum != nil {
 				headers[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-			} else if parameter.Type != nil {
-				switch typed := parameter.Type.(type) {
-				case string:
-					headers[name] = typed
-				case int:
-					headers[name] = strconv.Itoa(typed)
-				}
-				// FIXME now need to generate value based by validations and type
+			} else if len(parameter.Type) != 0 {
+				headers[name] = RandValue(parameter.Type)
 			}
 		}
 	}
@@ -216,14 +229,9 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 				}
 			} else if parameter.Enum != nil {
 				queryStrings[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-			} else if parameter.Type != nil {
-				switch typed := parameter.Type.(type) {
-				case string:
-					queryStrings[name] = typed
-				case int:
-					queryStrings[name] = strconv.Itoa(typed)
-				}
-				// FIXME now need to generate value based by validations and type
+			} else if len(parameter.Type) != 0 {
+				queryStrings[name] = RandValue(parameter.Type)
+
 			}
 		}
 	}

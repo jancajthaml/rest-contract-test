@@ -44,6 +44,54 @@ func CopyMap(ref map[string]string) map[string]string {
 	return clone
 }
 
+const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const numbers = "123456789"
+
+
+func RandValue(kind string) string {
+	// FIXME determine size by rules given minLength and maxLength
+	size := 10
+
+	switch kind {
+	case "string":
+
+	    output := make([]byte, size)
+		randomness := make([]byte, size)
+
+		if _, err := rand.Read(randomness); err != nil {
+			panic(err)
+		}
+
+		l := len(letters)
+		for pos := range output {
+			random := uint8(randomness[pos])
+			randomPos := random % uint8(l)
+			output[pos] = letters[randomPos]
+		}
+		return string(output)
+
+	case "number":
+		output := make([]byte, size)
+		randomness := make([]byte, size)
+
+		if _, err := rand.Read(randomness); err != nil {
+			panic(err)
+		}
+
+		l := len(numbers)
+		for pos := range output {
+			random := uint8(randomness[pos])
+			randomPos := random % uint8(l)
+			output[pos] = numbers[randomPos]
+		}
+		return string(output)
+	
+	default:
+		return ""
+
+	}
+}
+
 func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]map[string]string {
 	result := make(map[string]map[string]string)
 
@@ -63,14 +111,8 @@ func populateSecurityQueryParams(dataset map[string]SecurityScheme) map[string]m
 					}
 				} else if parameter.Enum != nil {
 					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} else if parameter.Type != nil {
-					// FIXME now need to generate value based by validations and type
-					switch typed := parameter.Type.(type) {
-					case string:
-						placeholder[name] = typed
-					case int:
-						placeholder[name] = strconv.Itoa(typed)
-					}
+				} else if len(parameter.Type) != 0 {
+					placeholder[name] = RandValue(parameter.Type)
 				}
 			}
 			if len(placeholder) != 0 {
@@ -101,14 +143,8 @@ func populateTraitQueryParams(dataset map[string]*Trait) map[string]map[string]s
 					}
 				} else if parameter.Enum != nil {
 					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} else if parameter.Type != nil {
-					switch typed := parameter.Type.(type) {
-					case string:
-						placeholder[name] = typed
-					case int:
-						placeholder[name] = strconv.Itoa(typed)
-					}
-					// FIXME now need to generate value based by validations and type
+				} else if len(parameter.Type) != 0 {
+					placeholder[name] = RandValue(parameter.Type)
 				}
 			}
 			if len(placeholder) != 0 {
@@ -138,14 +174,8 @@ func populateSecurityHeaders(dataset map[string]SecurityScheme) map[string]map[s
 					}
 				} else if parameter.Enum != nil {
 					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} else if parameter.Type != nil {
-					switch typed := parameter.Type.(type) {
-					case string:
-						placeholder[name] = typed
-					case int:
-						placeholder[name] = strconv.Itoa(typed)
-					}
-					// FIXME now need to generate value based by validations and type
+				} else if len(parameter.Type) != 0 {
+					placeholder[name] = RandValue(parameter.Type)
 				}
 			}
 			if len(placeholder) != 0 {
@@ -177,14 +207,8 @@ func populateTraitHeaders(dataset map[string]*Trait) map[string]map[string]strin
 					}
 				} else if parameter.Enum != nil {
 					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} else if parameter.Type != nil {
-					switch typed := parameter.Type.(type) {
-					case string:
-						placeholder[name] = typed
-					case int:
-						placeholder[name] = strconv.Itoa(typed)
-					}
-					// FIXME now need to generate value based by validations and type
+				} else if len(parameter.Type) != 0 {
+					placeholder[name] = RandValue(parameter.Type)
 				}
 			}
 			if len(placeholder) != 0 {
@@ -197,7 +221,79 @@ func populateTraitHeaders(dataset map[string]*Trait) map[string]map[string]strin
 	return result
 }
 
+func populateSecurityBodies(dataset map[string]SecurityScheme) map[string][]byte {
+
+	result := make(map[string][]byte)
+
+	/*
+	for k, v := range dataset {
+		if v.DescribedBy.Headers != nil {
+			placeholder := make(map[string]string)
+
+			for name, parameter := range v.DescribedBy.Headers.Data {
+				if parameter.Example != nil {
+					switch typed := parameter.Example.(type) {
+					case string:
+						placeholder[name] = strings.Replace(typed, "\n", "", -1)
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+				} else if parameter.Enum != nil {
+					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+				} else if len(parameter.Type) != 0 {
+					placeholder[name] = RandValue(parameter.Type)
+				}
+			}
+			if len(placeholder) != 0 {
+				result[k] = placeholder
+			}
+
+		}
+	}
+	*/
+
+	return result
+}
+
+func populateTraitBodies(dataset map[string]*Trait) map[string][]byte {
+
+	result := make(map[string][]byte)
+
+	/*
+	for k, v := range dataset {
+
+		if v.Headers != nil {
+			placeholder := make(map[string]string)
+
+			for name, parameter := range v.Headers.Data {
+				if parameter.Example != nil {
+					switch typed := parameter.Example.(type) {
+					case string:
+						placeholder[name] = strings.Replace(typed, "\n", "", -1)
+					case int:
+						placeholder[name] = strconv.Itoa(typed)
+					}
+				} else if parameter.Enum != nil {
+					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
+				} else if len(parameter.Type) != 0 {
+					placeholder[name] = RandValue(parameter.Type)
+				}
+			}
+			if len(placeholder) != 0 {
+				result[k] = placeholder
+			}
+
+		}
+	}
+	*/
+	return result
+}
+
+//
+
 func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, error) {
+
+	// FIXME make this faster
 
 	var preprocessedContents bytes.Buffer
 
@@ -218,9 +314,7 @@ func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, er
 
 			includedContents, err := gio.ReadLocalFile(filepath.Join(workingDirectory, includedFile))
 			if err != nil {
-				return nil,
-					fmt.Errorf("Error including file %s:\n    %s",
-						includedFile, err.Error())
+				return nil, fmt.Errorf("Error including file %s:\n    %s", includedFile, err.Error())
 			}
 
 			internalScanner := bufio.NewScanner(bytes.NewBuffer(includedContents))

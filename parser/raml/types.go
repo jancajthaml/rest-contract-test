@@ -20,13 +20,15 @@ type QueryParameters struct {
 }
 
 func (ref *QueryParameters) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	// FIXME better
+
 	ref.Data = make(map[string]NamedParameter)
 
 	if err = unmarshaler(ref.Data); err == nil {
 		return
 	}
 
-	data := make(map[string]interface{}, 0)
+	data := make(map[string]string, 0)
 	if err = unmarshaler(&data); err == nil {
 		for k, v := range data {
 			ref.Data[k] = NamedParameter{
@@ -45,13 +47,15 @@ type Headers struct {
 }
 
 func (ref *Headers) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	// FIXME better
+
 	ref.Data = make(map[string]NamedParameter)
 
 	if err = unmarshaler(ref.Data); err == nil {
 		return
 	}
 
-	data := make(map[string]interface{}, 0)
+	data := make(map[string]string, 0)
 	if err = unmarshaler(&data); err == nil {
 		for k, v := range data {
 			ref.Data[k] = NamedParameter{
@@ -69,7 +73,7 @@ type NamedParameter struct {
 	Name        string
 	DisplayName string `yaml:"displayName"`
 	Description string
-	Type        interface{}
+	Type        string
 	Enum        []string `yaml:"enum,flow"`
 	Pattern     *string
 	MinLength   *int `yaml:"minLength"`
@@ -127,6 +131,8 @@ type Traits struct {
 }
 
 func (ref *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	// FIXME better
+
 	ref.Data = make(map[string]*Trait)
 
 	if err = unmarshaler(ref.Data); err == nil {
@@ -305,6 +311,8 @@ func (ref *Reference) UnmarshalYAML(unmarshaler func(interface{}) error) (err er
 }
 
 func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	// FIXME better
+
 	simpleDefinition := new(string)
 	parameterizedDefinition := make(map[string]map[interface{}]interface{})
 

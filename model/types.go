@@ -46,8 +46,6 @@ func (ref Endpoint) String() string {
 		qs = "?" + qs
 	}
 
-	// -H "Content-Type: application/json"
-
 	cmd := "curl -v -L "
 
 	switch ref.Method {
@@ -62,7 +60,7 @@ func (ref Endpoint) String() string {
 	}
 
 	for k, v := range ref.Headers {
-		cmd += "-H \"" + k + ":" + v + "\" "
+		cmd += "-H \"" + k + ": " + v + "\" "
 	}
 
 	//--data '{"username":"xyz","password":"xyz"}' \
