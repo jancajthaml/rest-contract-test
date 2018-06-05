@@ -73,7 +73,7 @@ type NamedParameter struct {
 	Name        string
 	DisplayName string `yaml:"displayName"`
 	Description string
-	Type        string
+	Type        string `yaml:"type"`
 	Enum        []string `yaml:"enum,flow"`
 	Pattern     *string
 	MinLength   *int `yaml:"minLength"`
@@ -92,6 +92,7 @@ type Documentation struct {
 }
 
 type Body struct {
+	Type        string `yaml:"type"`
 	mediaType      string                    `yaml:"mediaType"`
 	Schema         interface{}               `yaml:"schema"`
 	Description    string                    `yaml:"description"`
@@ -102,20 +103,10 @@ type Body struct {
 
 type Bodies struct {
 	Referenced            *string
-	DefaultSchema         interface{}               `yaml:"schema"`
-	DefaultDescription    string                    `yaml:"description"`
-	DefaultExample        interface{}               `yaml:"example"`
-	DefaultFormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers               *Headers                  `yaml:"headers"`
 	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
 }
 
 type LiteralBodies struct {
-	DefaultSchema         interface{}               `yaml:"schema"`
-	DefaultDescription    string                    `yaml:"description"`
-	DefaultExample        interface{}               `yaml:"example"`
-	DefaultFormParameters map[string]NamedParameter `yaml:"formParameters"`
-	Headers               *Headers                  `yaml:"headers"`
 	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
 }
 
@@ -156,11 +147,6 @@ func (ref *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error
 func (ref *Bodies) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
 	literal := new(LiteralBodies)
 	if err = unmarshaler(literal); err == nil {
-		ref.DefaultSchema = literal.DefaultSchema
-		ref.DefaultDescription = literal.DefaultDescription
-		ref.DefaultExample = literal.DefaultExample
-		ref.DefaultFormParameters = literal.DefaultFormParameters
-		ref.Headers = literal.Headers
 		ref.ForMIMEType = literal.ForMIMEType
 		return
 	}
@@ -272,7 +258,7 @@ func (ref *MediaType) UnmarshalYAML(unmarshaler func(interface{}) error) (err er
 
 type DefinitionChoice struct {
 	Name       string
-	Parameters map[interface{}]interface{}
+	Parameters map[string]interface{}
 }
 
 type Reference struct {
@@ -314,7 +300,7 @@ func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) 
 	// FIXME better
 
 	simpleDefinition := new(string)
-	parameterizedDefinition := make(map[string]map[interface{}]interface{})
+	parameterizedDefinition := make(map[string]map[string]interface{})
 
 	if err = unmarshaler(simpleDefinition); err == nil {
 		ref.Name = *simpleDefinition

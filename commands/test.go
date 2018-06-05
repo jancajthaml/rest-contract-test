@@ -20,6 +20,9 @@ import (
 	"github.com/codegangsta/cli"
 
 	"github.com/jancajthaml/rest-contract-test/parser"
+	"github.com/jancajthaml/rest-contract-test/model"
+
+	"encoding/json"
 )
 
 func CmdTest(c *cli.Context) error {
@@ -28,19 +31,66 @@ func CmdTest(c *cli.Context) error {
 		return fmt.Errorf("no resource provided")
 	}
 
-	// FIXME determine if resource is url or local file
-	_, err := parser.FromFile(resource)
+	contract, err := parser.FromResource(resource)
 	if err != nil {
 		return err
 	}
-	/*
-	fmt.Printf("Source: %s\n", contract.Source)
-	fmt.Printf("Type: %s\n", contract.Type)
+	
+	//fmt.Printf("Source: %s\n", contract.Source)
+	//fmt.Printf("Type: %s\n", contract.Type)
 
 	for _, endpoint := range contract.Endpoints {
-		fmt.Println(endpoint)
+		for _, curl := range GenerateCurls(endpoint) {
+			fmt.Println(curl)
+		}
 	}
-	*/
 
 	return nil
+}
+
+// FIXME for debugging right now
+
+func GenerateCurls(ref model.Endpoint) []string {
+	res := make([]string, 0)
+
+	qs := model.Urlencode(ref.QueryStrings)
+	if len(qs) != 0 {
+		qs = "?" + qs
+	}
+
+	cmd := "curl -v -L "
+
+	switch ref.Method {
+	case "PUT":
+		cmd += "-X PUT "
+	case "POST":
+		cmd += "-X POST "
+	case "PATCH":
+		cmd += "-X PATCH "
+	case "DELETE":
+		cmd += "-X DELETE "
+	}
+
+	for k, v := range ref.Headers {
+		cmd += "-H \"" + k + ": " + v + "\" "
+	}
+
+	if len(ref.Requests) == 0 {
+		return append(res, cmd + ref.URI + qs)
+	}
+
+	for mime, payload := range ref.Requests {
+		// FOR form data: -d "param1=value1&param2=value2"
+		switch mime {
+		case "application/json":
+			bytes, err := json.Marshal(payload)
+		    if err != nil {
+		        fmt.Println("Can't serialize", err)
+		        continue
+		    }
+			res = append(res, cmd + "-H \"Content-Type: " + mime + "\" " + "-H \"Accept: application/json\" " + "-d '" + string(bytes) + "' " + ref.URI + qs)		
+		}
+	}
+
+	return res
 }

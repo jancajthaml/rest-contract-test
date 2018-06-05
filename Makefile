@@ -49,8 +49,11 @@ package:
 verify:
 	@eval $(eval ct=$(shell sh -c 'find ./bin -type f -name "darwin*"' | awk '{print $$1}'))
 
-	@echo "[info] test all"
+	@echo "[info] test local"
 	@find ./spec -type f -name "*api*" -exec $(ct) test {} \;
+
+	@echo "[info] test remote"
+	@$(ct) test http://petstore.swagger.io/v2/swagger.json
 
 .PHONY: bbtest
 bbtest:

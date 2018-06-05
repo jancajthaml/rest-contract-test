@@ -19,17 +19,12 @@ type Response struct {
 	Schema  string // FIXME not string but interface{} instead ?
 }
 
-type Request struct {
-	Example string // FIXME example is a wrong name
-	Schema  string // FIXME not string but interface{} instead ?
-}
-
 type Endpoint struct {
 	URI          string
 	Method       string
 	Responses    []Response // FIXME map HTTP_CODE -> RESPONSE
 	Headers      map[string]string
-	Request      Request // FIXME optional ?
+	Requests     map[string]interface{}
 	QueryStrings map[string]string
 }
 
@@ -38,32 +33,4 @@ type Contract struct {
 	Type      string
 	Name      string
 	Endpoints []Endpoint
-}
-
-func (ref Endpoint) String() string {
-	qs := Urlencode(ref.QueryStrings)
-	if len(qs) != 0 {
-		qs = "?" + qs
-	}
-
-	cmd := "curl -v -L "
-
-	switch ref.Method {
-	case "PUT":
-		cmd += "-X PUT "
-	case "POST":
-		cmd += "-X POST "
-	case "PATCH":
-		cmd += "-X PATCH "
-	case "DELETE":
-		cmd += "-X DELETE "
-	}
-
-	for k, v := range ref.Headers {
-		cmd += "-H \"" + k + ": " + v + "\" "
-	}
-
-	//--data '{"username":"xyz","password":"xyz"}' \
-
-	return cmd + ref.URI + qs
 }

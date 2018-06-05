@@ -148,7 +148,7 @@ func ReadLocalFile(filePath string) ([]byte, error) {
 			return nil, err
 		}
 
-		body = untypedConvert(body)
+		body = UntypedConvert(body)
 		if b, err := yaml.Marshal(body); err != nil {
 			return nil, err
 		} else {
@@ -161,7 +161,7 @@ func ReadLocalFile(filePath string) ([]byte, error) {
 			return nil, err
 		}
 
-		body = untypedConvert(body)
+		body = UntypedConvert(body)
 		if b, err := yaml.Marshal(body); err != nil {
 			return nil, err
 		} else {
@@ -173,17 +173,22 @@ func ReadLocalFile(filePath string) ([]byte, error) {
 	return data, nil
 }
 
-func untypedConvert(i interface{}) interface{} {
+func UntypedConvert(i interface{}) interface{} {
 	switch x := i.(type) {
 	case map[interface{}]interface{}:
 		m2 := map[string]interface{}{}
 		for k, v := range x {
-			m2[k.(string)] = untypedConvert(v)
+			m2[k.(string)] = UntypedConvert(v)
 		}
 		return m2
+	case map[string]interface{}:
+		for k, v := range x {
+			x[k] = UntypedConvert(v)
+		}
+		return x
 	case []interface{}:
 		for i, v := range x {
-			x[i] = untypedConvert(v)
+			x[i] = UntypedConvert(v)
 		}
 	}
 	return i

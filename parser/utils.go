@@ -16,6 +16,8 @@ package parser
 
 import (
 	"fmt"
+	"net/url"
+	//"net/http"
 
 	"github.com/jancajthaml/rest-contract-test/io"
 	"github.com/jancajthaml/rest-contract-test/model"
@@ -23,7 +25,31 @@ import (
 	"github.com/jancajthaml/rest-contract-test/parser/swagger"
 )
 
-func FromFile(file string) (*model.Contract, error) {
+func FromResource(resource string) (*model.Contract, error) {
+	if _, err := url.ParseRequestURI(resource); err == nil {
+		return fromUri(resource)
+	}
+
+	return fromFile(resource)
+}
+
+func fromUri(uri string) (*model.Contract, error) {
+	/*
+	response, err := http.Get(os.Args[1])
+	if err != nil {
+        log.Fatal(err)
+	} else {
+        defer response.Body.Close()
+        _, err := io.Copy(os.Stdout, response.Body)
+        if err != nil {
+                log.Fatal(err)
+        }
+	}
+	*/
+    return nil, fmt.Errorf("loading from uri not implemented")
+}
+
+func fromFile(file string) (*model.Contract, error) {
 
 	switch io.GetDocumentType(file) {
 

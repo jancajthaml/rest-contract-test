@@ -47,7 +47,6 @@ func CopyMap(ref map[string]string) map[string]string {
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const numbers = "123456789"
 
-
 func RandValue(kind string) string {
 	// FIXME determine size by rules given minLength and maxLength
 	size := 10
@@ -222,82 +221,6 @@ func populateTraitHeaders(dataset map[string]*Trait) map[string]map[string]strin
 
 	return result
 }
-
-/*
-func populateSecurityBodies(dataset map[string]SecurityScheme) map[string][]byte {
-
-	result := make(map[string][]byte)
-
-	for k, v := range dataset {
-		if v.DescribedBy.Bodies != nil {
-			fmt.Println("in security", k)
-			fmt.Println(v.DescribedBy.Bodies)
-
-			placeholder := make(map[string]string)
-
-			for name, parameter := range v.DescribedBy.Headers.Data {
-				if parameter.Example != nil {
-					switch typed := parameter.Example.(type) {
-					case string:
-						placeholder[name] = strings.Replace(typed, "\n", "", -1)
-					case int:
-						placeholder[name] = strconv.Itoa(typed)
-					}
-				} else if parameter.Enum != nil {
-					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} else if len(parameter.Type) != 0 {
-					placeholder[name] = RandValue(parameter.Type)
-				}
-			}
-			if len(placeholder) != 0 {
-				result[k] = placeholder
-			}
-
-		}
-	}
-
-	return result
-}*/
-
-/*
-func populateTraitBodies(dataset map[string]*Trait) map[string][]byte {
-
-	result := make(map[string][]byte)
-
-	for k, v := range dataset {
-
-		if v.Bodies != nil {
-			fmt.Println("in traits", k)
-			fmt.Println(v.Bodies)
-
-			placeholder := make(map[string]string)
-
-			for name, parameter := range v.Headers.Data {
-				if parameter.Example != nil {
-					switch typed := parameter.Example.(type) {
-					case string:
-						placeholder[name] = strings.Replace(typed, "\n", "", -1)
-					case int:
-						placeholder[name] = strconv.Itoa(typed)
-					}
-				} else if parameter.Enum != nil {
-					placeholder[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
-				} else if len(parameter.Type) != 0 {
-					placeholder[name] = RandValue(parameter.Type)
-				}
-			}
-			if len(placeholder) != 0 {
-				result[k] = placeholder
-			}
-
-		}
-	}
-
-	return result
-}
-*/
-
-//
 
 func PreProcess(originalContents io.Reader, workingDirectory string) ([]byte, error) {
 
