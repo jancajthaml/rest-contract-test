@@ -19,8 +19,9 @@ import (
 
 	"github.com/codegangsta/cli"
 
-	"github.com/jancajthaml/rest-contract-test/parser"
 	"github.com/jancajthaml/rest-contract-test/model"
+	"github.com/jancajthaml/rest-contract-test/parser"
+	"github.com/jancajthaml/rest-contract-test/workflow"
 
 	"encoding/json"
 )
@@ -35,13 +36,16 @@ func CmdTest(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	
-	//fmt.Printf("Source: %s\n", contract.Source)
-	//fmt.Printf("Type: %s\n", contract.Type)
 
-	for _, endpoint := range contract.Endpoints {
-		fmt.Println(GenerateCurl(endpoint))
-	}
+	// FIXME in parallel
+	workflow.PopulateRequirements(contract)
+	workflow.PopulateProvisions(contract)
+
+	/*
+		for _, endpoint := range contract.Endpoints {
+			fmt.Println(GenerateCurl(endpoint))
+		}
+	*/
 
 	return nil
 }
@@ -76,11 +80,11 @@ func GenerateCurl(ref model.Endpoint) string {
 	if ref.Request != nil {
 		switch ref.ContentType {
 		case "application/json":
-		    if bytes, err := json.Marshal(ref.Request) ; err == nil {
-		        cmd += "-H \"Content-Type: " + ref.ContentType + "\" "
-			    cmd += "-H \"Accept: application/json\" "
-			    cmd += "-d '" + string(bytes) + "' "
-		    }
+			if bytes, err := json.Marshal(ref.Request); err == nil {
+				cmd += "-H \"Content-Type: " + ref.ContentType + "\" "
+				cmd += "-H \"Accept: application/json\" "
+				cmd += "-d '" + string(bytes) + "' "
+			}
 		}
 	}
 

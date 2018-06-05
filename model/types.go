@@ -24,10 +24,12 @@ type Endpoint struct {
 	Method       string
 	Responses    []Response // FIXME map HTTP_CODE -> RESPONSE
 	Headers      map[string]string
-	ContentType string
-	Accept string
-	Request     interface{}
+	ContentType  string
+	Accept       string
+	Request      interface{}
 	QueryStrings map[string]string
+	Provides     []string
+	Requires     []string
 }
 
 type Contract struct {

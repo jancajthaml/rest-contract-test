@@ -15,14 +15,18 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
+	"net/http"
 	"net/url"
 	//"net/http"
 
-	"github.com/jancajthaml/rest-contract-test/io"
+	gio "github.com/jancajthaml/rest-contract-test/io"
 	"github.com/jancajthaml/rest-contract-test/model"
 	"github.com/jancajthaml/rest-contract-test/parser/raml"
 	"github.com/jancajthaml/rest-contract-test/parser/swagger"
+
+	"io"
 )
 
 func FromResource(resource string) (*model.Contract, error) {
@@ -34,24 +38,26 @@ func FromResource(resource string) (*model.Contract, error) {
 }
 
 func fromUri(uri string) (*model.Contract, error) {
-	/*
-	response, err := http.Get(os.Args[1])
+	response, err := http.Get(uri)
 	if err != nil {
-        log.Fatal(err)
-	} else {
-        defer response.Body.Close()
-        _, err := io.Copy(os.Stdout, response.Body)
-        if err != nil {
-                log.Fatal(err)
-        }
+		return nil, err
 	}
-	*/
-    return nil, fmt.Errorf("loading from uri not implemented")
+
+	defer response.Body.Close()
+	buffer := bytes.NewBuffer(nil)
+
+	if _, err := io.Copy(buffer, response.Body); err != nil {
+		return nil, err
+	}
+
+	//fmt.Println(string(buffer.Bytes()))
+
+	return nil, fmt.Errorf("loading from uri not implemented")
 }
 
 func fromFile(file string) (*model.Contract, error) {
 
-	switch io.GetDocumentType(file) {
+	switch gio.GetDocumentType(file) {
 
 	case "RAML":
 		contract, err := raml.NewRaml(file)
