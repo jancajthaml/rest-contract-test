@@ -219,38 +219,43 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 		}
 	}
 
-	bodies := make(map[string]interface{})
-
-	if method.Bodies != nil {
-		if method.Bodies.Referenced != nil {
-			fmt.Println("body by reference")
-		} else {
-			//fmt.Println("body by literal")
-			
-			for mime, body := range method.Bodies.ForMIMEType {
-				//fmt.Println("mime", mime)
-				if body.Example != nil {
-					bodies[mime] = gio.UntypedConvert(body.Example)
-				} /*else if len(body.Type) != 0 {
-					// FIXME not supported now
-
-					//Request
-					//fmt.Println(" body", body.Type)
-				} else if body.FormParameters != nil {
-					// FIXME not supported now
-					//fmt.Println(" body", body.FormParameters)
-				}*/
-			}
-		}
+	if method.Bodies == nil {
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			URI:          path,
+			Method:       kind,
+			QueryStrings: queryStrings,
+			Headers:      headers,
+		})
+		return
+	}
+		
+	if method.Bodies.Referenced != nil {
+		fmt.Println("body by reference")
+		return
 	}
 
-	contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-		URI:          path,
-		Method:       kind,
-		QueryStrings: queryStrings,
-		Headers:      headers,
-		Requests:     bodies,
-	})
+	for mime, body := range method.Bodies.ForMIMEType {
+		if body.Example != nil {
+			contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+				URI:          path,
+				Method:       kind,
+				QueryStrings: queryStrings,
+				Headers:      headers,
+				Request:     gio.UntypedConvert(body.Example),
+				ContentType: mime,
+			})
+		} /*else if len(body.Type) != 0 {
+			// FIXME not supported now
+
+			//Request
+			//fmt.Println(" body", body.Type)
+		} else if body.FormParameters != nil {
+			// FIXME not supported now
+			//fmt.Println(" body", body.FormParameters)
+		}*/
+	}
+
+	return
 }
 
 func walk(contract *model.Contract, path string, resource *Resource,

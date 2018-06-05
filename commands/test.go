@@ -40,9 +40,7 @@ func CmdTest(c *cli.Context) error {
 	//fmt.Printf("Type: %s\n", contract.Type)
 
 	for _, endpoint := range contract.Endpoints {
-		for _, curl := range GenerateCurls(endpoint) {
-			fmt.Println(curl)
-		}
+		fmt.Println(GenerateCurl(endpoint))
 	}
 
 	return nil
@@ -50,8 +48,8 @@ func CmdTest(c *cli.Context) error {
 
 // FIXME for debugging right now
 
-func GenerateCurls(ref model.Endpoint) []string {
-	res := make([]string, 0)
+func GenerateCurl(ref model.Endpoint) string {
+	//res := make([]string, 0)
 
 	qs := model.Urlencode(ref.QueryStrings)
 	if len(qs) != 0 {
@@ -75,22 +73,16 @@ func GenerateCurls(ref model.Endpoint) []string {
 		cmd += "-H \"" + k + ": " + v + "\" "
 	}
 
-	if len(ref.Requests) == 0 {
-		return append(res, cmd + ref.URI + qs)
-	}
-
-	for mime, payload := range ref.Requests {
-		// FOR form data: -d "param1=value1&param2=value2"
-		switch mime {
+	if ref.Request != nil {
+		switch ref.ContentType {
 		case "application/json":
-			bytes, err := json.Marshal(payload)
-		    if err != nil {
-		        fmt.Println("Can't serialize", err)
-		        continue
+		    if bytes, err := json.Marshal(ref.Request) ; err == nil {
+		        cmd += "-H \"Content-Type: " + ref.ContentType + "\" "
+			    cmd += "-H \"Accept: application/json\" "
+			    cmd += "-d '" + string(bytes) + "' "
 		    }
-			res = append(res, cmd + "-H \"Content-Type: " + mime + "\" " + "-H \"Accept: application/json\" " + "-d '" + string(bytes) + "' " + ref.URI + qs)		
 		}
 	}
 
-	return res
+	return cmd + ref.URI + qs
 }

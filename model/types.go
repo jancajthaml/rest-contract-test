@@ -24,7 +24,9 @@ type Endpoint struct {
 	Method       string
 	Responses    []Response // FIXME map HTTP_CODE -> RESPONSE
 	Headers      map[string]string
-	Requests     map[string]interface{}
+	ContentType string
+	Accept string
+	Request     interface{}
 	QueryStrings map[string]string
 }
 
