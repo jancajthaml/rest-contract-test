@@ -25,43 +25,38 @@ import (
 
 var placeholderPattern = regexp.MustCompile(`(?:\{|\<{2}).{1,100}?(?:\}|\>{2})`)
 
-func discoverRequestRequirements(request interface{}, result []string) []string {
+func discoverRequestRequirements(request interface{}, requirements *[]string) {
 	switch x := request.(type) {
 
 	case map[string]interface{}:
 		for _, v := range x {
-			discoverRequestRequirements(v, result)
+			discoverRequestRequirements(v, requirements)
 		}
-		return result
 
 	case string:
-		fmt.Println("in leaf of request with", x)
-
-		// TBD check value for placeholder here and append to result by ref
-		return result
+		for _, submatches := range placeholderPattern.FindAllStringSubmatch(x, -1) {
+			for _, match := range submatches {
+				*requirements = append(*requirements, match)
+			}
+		}
 
 	case map[interface{}]interface{}:
 		for _, v := range x {
-			discoverRequestRequirements(v, result)
+			discoverRequestRequirements(v, requirements)
 		}
-		return result
 
 	case []interface{}:
 		for _, v := range x {
-			discoverRequestRequirements(v, result)
+			discoverRequestRequirements(v, requirements)
 		}
-		return result
 
 	case []string:
 		for _, v := range x {
-			discoverRequestRequirements(v, result)
+			discoverRequestRequirements(v, requirements)
 		}
-		return result
-
-	default:
-		return result
 
 	}
+	return
 }
 
 func PopulateRequirements(contract *model.Contract) {
@@ -83,11 +78,20 @@ func PopulateRequirements(contract *model.Contract) {
 			}
 		}
 
+		// queryString requirements
+		for _, val := range endpoint.QueryStrings {
+			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
+				for _, match := range submatches {
+					endpoint.Requires = append(endpoint.Requires, match)
+				}
+			}
+		}
+
 		// request requirements
-		endpoint.Requires = append(discoverRequestRequirements(endpoint.Request, make([]string, 0)), endpoint.Requires...)
+		discoverRequestRequirements(endpoint.Request, &endpoint.Requires)
 
 		if len(endpoint.Requires) != 0 {
-			fmt.Println("endpoint", endpoint.URI, "requires following placeholders:", endpoint.Requires)
+			fmt.Println("endpoint", endpoint.Method, endpoint.URI, "requires following placeholders:", endpoint.Requires)
 		}
 	}
 

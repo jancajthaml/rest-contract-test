@@ -32,6 +32,13 @@ types:
           application/json:
             type: PersonData
             example: !include example.person_data.json
+  delete:
+    responses:
+      200:
+        body:
+          application/json:
+            type: PersonData
+            example: !include example.person_data.json
 
 /{version}/person:
   post:
