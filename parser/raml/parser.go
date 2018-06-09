@@ -149,6 +149,7 @@ func NewRaml(file string) (*model.Contract, error) {
 	return contract, nil
 }
 
+// FIXME optimise method signature
 func processMethod(contract *model.Contract, path string, kind string, method *Method,
 	queryStrings map[string]string, headers map[string]string, responses map[int]model.Payload,
 	securityQueryStrings map[string]map[string]string, traitsQueryStrings map[string]map[string]string,
@@ -227,7 +228,7 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 				continue
 			}
 
-			bodies := processBodies(response.Bodies)
+			bodies := processBodies(nil, response.Bodies)
 			for _, payload := range bodies {
 				rs[code] = model.Payload{
 					Content: &payload,
@@ -251,7 +252,7 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 		return
 	}
 
-	bodies := processBodies(method.Bodies)
+	bodies := processBodies(nil, method.Bodies)
 	for _, payload := range bodies {
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			URI:          path,
@@ -268,7 +269,7 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 	return
 }
 
-func processBodies(bodies *Bodies) []model.Content {
+func processBodies(types *ResourceTypes, bodies *Bodies) []model.Content {
 
 	result := make([]model.Content, 0)
 
@@ -290,6 +291,7 @@ func processBodies(bodies *Bodies) []model.Content {
 	return result
 }
 
+// FIXME optimise method signature
 func walk(contract *model.Contract, path string, resource *Resource,
 	queryStrings map[string]string, headers map[string]string, responses map[int]model.Payload,
 	securityQueryStrings map[string]map[string]string, traitsQueryStrings map[string]map[string]string,

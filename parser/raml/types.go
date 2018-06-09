@@ -448,6 +448,7 @@ type APIDefinition struct {
 	Schemas       *Schemas       `yaml:"schemas"`
 	Traits        *Traits        `yaml:"traits"`
 	ResourceTypes *ResourceTypes `yaml:"resourceTypes"`
+	Types         *ResourceTypes `yaml:"types"`
 
 	Resources map[string]Resource `yaml:",regexp:/.*"`
 }

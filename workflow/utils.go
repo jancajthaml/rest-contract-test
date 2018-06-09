@@ -107,12 +107,37 @@ func PopulateProvisions(contract *model.Contract) {
 
 	globals := make([]string, 0)
 
+	// environment provisions
+
 	for _, pair := range os.Environ() {
 		providing := strings.Split(pair, "=")[0]
 		alias := strings.Replace(strings.ToLower(providing), "_", "-", -1)
 		globals = append(globals, providing)
 		if alias != providing {
 			globals = append(globals, alias)
+		}
+	}
+
+	//globals := make([]string, 0)
+
+	// responses provisions
+	for _, endpoint := range contract.Endpoints {
+		for code, response := range endpoint.Responses {
+			fmt.Println("provision detection of", code, response.Content)
+
+			// response headers provisions
+			for _, val := range response.Headers {
+				for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
+					for _, match := range submatches {
+						//endpoint.Requires = append(endpoint.Requires, match)
+						endpoint.Provides = append(endpoint.Provides, match)
+					}
+				}
+			}
+		}
+
+		if len(endpoint.Provides) != 0 {
+			fmt.Println("endpoint", endpoint.Method, endpoint.URI, "requires following placeholders:", endpoint.Requires)
 		}
 	}
 
