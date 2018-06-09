@@ -73,7 +73,7 @@ type NamedParameter struct {
 	Name        string
 	DisplayName string `yaml:"displayName"`
 	Description string
-	Type        string `yaml:"type"`
+	Type        string   `yaml:"type"`
 	Enum        []string `yaml:"enum,flow"`
 	Pattern     *string
 	MinLength   *int `yaml:"minLength"`
@@ -92,7 +92,7 @@ type Documentation struct {
 }
 
 type Body struct {
-	Type        string `yaml:"type"`
+	Type           string                    `yaml:"type"`
 	mediaType      string                    `yaml:"mediaType"`
 	Schema         interface{}               `yaml:"schema"`
 	Description    string                    `yaml:"description"`
@@ -102,23 +102,45 @@ type Body struct {
 }
 
 type Bodies struct {
-	Referenced            *string
-	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
+	Referenced  *string
+	ForMIMEType map[string]Body
 }
 
 type LiteralBodies struct {
-	ForMIMEType           map[string]Body           `yaml:",regexp:.*"`
+	ForMIMEType map[string]Body `yaml:",regexp:.*"`
+}
+
+type LiteralResponse struct {
+	Headers *Headers `yaml:"headers"`
+	Bodies  *Bodies  `yaml:"body"`
 }
 
 type Response struct {
-	HTTPCode    int
-	Description string
-	Headers     *Headers `yaml:"headers"`
-	Bodies      *Bodies  `yaml:"body"`
+	Referenced *string
+	Headers    *Headers
+	Bodies     *Bodies
 }
 
 type Traits struct {
 	Data map[string]*Trait
+}
+
+func (ref *Response) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
+	literal := new(LiteralResponse)
+	if err = unmarshaler(literal); err == nil {
+		ref.Bodies = literal.Bodies
+		ref.Headers = literal.Headers
+
+		return
+	}
+
+	data := new(string)
+	if err = unmarshaler(data); err == nil {
+		ref.Referenced = data
+		return
+	}
+
+	return
 }
 
 func (ref *Traits) UnmarshalYAML(unmarshaler func(interface{}) error) (err error) {
@@ -319,12 +341,12 @@ func (ref *DefinitionChoice) UnmarshalYAML(unmarshaler func(interface{}) error) 
 }
 
 type Trait struct {
-	Bodies                  *Bodies                 `yaml:"body"`
+	Bodies                  *Bodies                `yaml:"body"`
 	Headers                 *Headers               `yaml:"headers"`
 	Responses               map[int]Response       `yaml:"responses"`
 	QueryParameters         *QueryParameters       `yaml:"queryParameters"`
 	Protocols               []string               `yaml:"protocols"`
-	OptionalBodies          *Bodies                 `yaml:"body?"`
+	OptionalBodies          *Bodies                `yaml:"body?"`
 	OptionalHeaders         map[string]interface{} `yaml:"headers?"`
 	OptionalResponses       map[int]Response       `yaml:"responses?"`
 	OptionalQueryParameters map[string]interface{} `yaml:"queryParameters?"`
@@ -333,7 +355,7 @@ type Trait struct {
 type ResourceTypeMethod struct {
 	Name            string
 	Description     string
-	Bodies          *Bodies           `yaml:"body"`
+	Bodies          *Bodies          `yaml:"body"`
 	Headers         *Headers         `yaml:"headers"`
 	Responses       map[int]Response `yaml:"responses"`
 	QueryParameters *QueryParameters `yaml:"queryParameters"`
@@ -364,8 +386,8 @@ type ResourceType struct {
 
 // FIXME name differently
 type SecuritySchemeMethod struct {
-	Bodies *Bodies `yaml:"body"`
-	Headers *Headers `yaml:"headers"`
+	Bodies          *Bodies          `yaml:"body"`
+	Headers         *Headers         `yaml:"headers"`
 	Responses       map[int]Response `yaml:"responses"`
 	QueryParameters *QueryParameters `yaml:"queryParameters"`
 }
@@ -382,13 +404,13 @@ type SecurityScheme struct {
 type Method struct {
 	Name            string
 	Description     string
-	Protocols       []string         `yaml:"protocols"`
-	SecuredBy       *Reference       `yaml:"securedBy"`
-	Headers         *Headers         `yaml:"headers"`
-	QueryParameters *QueryParameters `yaml:"queryParameters"`
+	Protocols       []string          `yaml:"protocols"`
+	SecuredBy       *Reference        `yaml:"securedBy"`
+	Headers         *Headers          `yaml:"headers"`
+	QueryParameters *QueryParameters  `yaml:"queryParameters"`
 	Bodies          *Bodies           `yaml:"body"`
-	Responses       map[int]Response `yaml:"responses"`
-	Is              *Reference       `yaml:"is"`
+	Responses       map[int]*Response `yaml:"responses"`
+	Is              *Reference        `yaml:"is"`
 }
 
 type Resource struct {

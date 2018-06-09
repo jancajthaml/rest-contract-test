@@ -15,6 +15,7 @@ platforms=(darwin)
 echo "[info] cleaning"
 
 if [ -d ${dist} ] && [ "$(ls -A ${dist})" ] ; then
+  go clean
   rm -rf ${dist}/*
 fi
 

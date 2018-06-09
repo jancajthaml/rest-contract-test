@@ -86,7 +86,7 @@ func NewRaml(file string) (*model.Contract, error) {
 
 	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
 	eventualQueryParamsTraits := make(chan map[string]map[string]string)
-	
+
 	eventualHeadersTraits := make(chan map[string]map[string]string)
 	eventualHeadersSecurity := make(chan map[string]map[string]string)
 
@@ -139,7 +139,7 @@ func NewRaml(file string) (*model.Contract, error) {
 
 	for path, v := range rootResource.Resources {
 		walk(contract, prefix+path, &v,
-			make(map[string]string), make(map[string]string),
+			make(map[string]string), make(map[string]string), make(map[int]model.Payload),
 			queryParamsSecurity, queryParamsTraits,
 			headersSecurity, headersTraits)
 	}
@@ -150,7 +150,7 @@ func NewRaml(file string) (*model.Contract, error) {
 }
 
 func processMethod(contract *model.Contract, path string, kind string, method *Method,
-	queryStrings map[string]string, headers map[string]string,
+	queryStrings map[string]string, headers map[string]string, responses map[int]model.Payload,
 	securityQueryStrings map[string]map[string]string, traitsQueryStrings map[string]map[string]string,
 	securityHeaders map[string]map[string]string, traitsHeaders map[string]map[string]string) {
 
@@ -219,47 +219,79 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 		}
 	}
 
+	rs := make(map[int]model.Payload, 0)
+	if len(method.Responses) != 0 {
+		for code, response := range method.Responses {
+			if response.Referenced != nil {
+				fmt.Println("response is referenced")
+				continue
+			}
+
+			bodies := processBodies(response.Bodies)
+			for _, payload := range bodies {
+				rs[code] = model.Payload{
+					Content: &payload,
+				}
+			}
+
+			// FIXME missing headers in responses
+
+		}
+	}
 	if method.Bodies == nil {
 		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
 			URI:          path,
 			Method:       kind,
 			QueryStrings: queryStrings,
-			Headers:      headers,
+			Request: model.Payload{
+				Headers: headers,
+			},
+			Responses: rs,
 		})
 		return
 	}
-		
-	if method.Bodies.Referenced != nil {
-		fmt.Println("body by reference")
-		return
-	}
 
-	for mime, body := range method.Bodies.ForMIMEType {
-		if body.Example != nil {
-			contract.Endpoints = append(contract.Endpoints, model.Endpoint{
-				URI:          path,
-				Method:       kind,
-				QueryStrings: queryStrings,
-				Headers:      headers,
-				Request:     gio.UntypedConvert(body.Example),
-				ContentType: mime,
-			})
-		} /*else if len(body.Type) != 0 {
-			// FIXME not supported now
-
-			//Request
-			//fmt.Println(" body", body.Type)
-		} else if body.FormParameters != nil {
-			// FIXME not supported now
-			//fmt.Println(" body", body.FormParameters)
-		}*/
+	bodies := processBodies(method.Bodies)
+	for _, payload := range bodies {
+		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+			URI:          path,
+			Method:       kind,
+			QueryStrings: queryStrings,
+			Request: model.Payload{
+				Headers: headers,
+				Content: &payload,
+			},
+			Responses: responses,
+		})
 	}
 
 	return
 }
 
+func processBodies(bodies *Bodies) []model.Content {
+
+	result := make([]model.Content, 0)
+
+	if bodies.Referenced != nil {
+		fmt.Println("body by reference", *bodies.Referenced)
+		return result
+	}
+
+	for mime, body := range bodies.ForMIMEType {
+
+		if body.Example != nil {
+			result = append(result, model.Content{
+				Example: gio.UntypedConvert(body.Example),
+				Type:    mime,
+			})
+		}
+	}
+
+	return result
+}
+
 func walk(contract *model.Contract, path string, resource *Resource,
-	queryStrings map[string]string, headers map[string]string,
+	queryStrings map[string]string, headers map[string]string, responses map[int]model.Payload,
 	securityQueryStrings map[string]map[string]string, traitsQueryStrings map[string]map[string]string,
 	securityHeaders map[string]map[string]string, traitsHeaders map[string]map[string]string) {
 
@@ -299,7 +331,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 
 	if resource.Get != nil {
 		processMethod(contract, path, "GET", resource.Get,
-			CopyMap(queryStrings), CopyMap(headers),
+			CopyMap(queryStrings), CopyMap(headers), responses,
 			securityQueryStrings, traitsQueryStrings,
 			securityHeaders, traitsHeaders)
 		found = true
@@ -307,7 +339,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 
 	if resource.Head != nil {
 		processMethod(contract, path, "HEAD", resource.Head,
-			CopyMap(queryStrings), CopyMap(headers),
+			CopyMap(queryStrings), CopyMap(headers), responses,
 			securityQueryStrings, traitsQueryStrings,
 			securityHeaders, traitsHeaders)
 		found = true
@@ -315,7 +347,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 
 	if resource.Post != nil {
 		processMethod(contract, path, "POST", resource.Post,
-			CopyMap(queryStrings), CopyMap(headers),
+			CopyMap(queryStrings), CopyMap(headers), responses,
 			securityQueryStrings, traitsQueryStrings,
 			securityHeaders, traitsHeaders)
 		found = true
@@ -323,7 +355,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 
 	if resource.Put != nil {
 		processMethod(contract, path, "PUT", resource.Put,
-			CopyMap(queryStrings), CopyMap(headers),
+			CopyMap(queryStrings), CopyMap(headers), responses,
 			securityQueryStrings, traitsQueryStrings,
 			securityHeaders, traitsHeaders)
 		found = true
@@ -331,7 +363,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 
 	if resource.Patch != nil {
 		processMethod(contract, path, "PATCH", resource.Patch,
-			CopyMap(queryStrings), CopyMap(headers),
+			CopyMap(queryStrings), CopyMap(headers), responses,
 			securityQueryStrings, traitsQueryStrings,
 			securityHeaders, traitsHeaders)
 		found = true
@@ -339,7 +371,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 
 	if resource.Delete != nil {
 		processMethod(contract, path, "DELETE", resource.Delete,
-			CopyMap(queryStrings), CopyMap(headers),
+			CopyMap(queryStrings), CopyMap(headers), responses,
 			securityQueryStrings, traitsQueryStrings,
 			securityHeaders, traitsHeaders)
 		found = true
@@ -352,12 +384,15 @@ func walk(contract *model.Contract, path string, resource *Resource,
 			URI:          path,
 			Method:       "GET",
 			QueryStrings: qs,
-			Headers:      hds,
+			Request: model.Payload{
+				Headers: hds,
+			},
+			Responses: responses,
 		})
 	}
 
 	for k, v := range resource.Nested {
-		walk(contract, path+k, v, queryStrings, headers,
+		walk(contract, path+k, v, queryStrings, headers, responses,
 			securityQueryStrings, traitsQueryStrings,
 			securityHeaders, traitsHeaders)
 	}

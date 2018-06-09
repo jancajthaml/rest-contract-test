@@ -14,19 +14,22 @@
 
 package model
 
-type Response struct {
-	Example string // FIXME example is a wrong name
-	Schema  string // FIXME not string but interface{} instead ?
+type Payload struct {
+	Content *Content
+	Headers map[string]string
+}
+
+type Content struct {
+	Type    string
+	Example interface{}
+	Schema  interface{}
 }
 
 type Endpoint struct {
 	URI          string
 	Method       string
-	Responses    []Response // FIXME map HTTP_CODE -> RESPONSE
-	Headers      map[string]string
-	ContentType  string
-	Accept       string
-	Request      interface{}
+	Responses    map[int]Payload
+	Request      Payload
 	QueryStrings map[string]string
 	Provides     []string
 	Requires     []string

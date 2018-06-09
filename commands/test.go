@@ -41,11 +41,9 @@ func CmdTest(c *cli.Context) error {
 	workflow.PopulateRequirements(contract)
 	workflow.PopulateProvisions(contract)
 
-	/*
-		for _, endpoint := range contract.Endpoints {
-			fmt.Println(GenerateCurl(endpoint))
-		}
-	*/
+	for _, endpoint := range contract.Endpoints {
+		fmt.Println("responses", endpoint.Responses)
+	}
 
 	return nil
 }
@@ -73,15 +71,15 @@ func GenerateCurl(ref model.Endpoint) string {
 		cmd += "-X DELETE "
 	}
 
-	for k, v := range ref.Headers {
+	for k, v := range ref.Request.Headers {
 		cmd += "-H \"" + k + ": " + v + "\" "
 	}
 
-	if ref.Request != nil {
-		switch ref.ContentType {
+	if ref.Request.Content != nil {
+		switch ref.Request.Content.Type {
 		case "application/json":
-			if bytes, err := json.Marshal(ref.Request); err == nil {
-				cmd += "-H \"Content-Type: " + ref.ContentType + "\" "
+			if bytes, err := json.Marshal(ref.Request.Content.Example); err == nil {
+				cmd += "-H \"Content-Type: " + ref.Request.Content.Type + "\" "
 				cmd += "-H \"Accept: application/json\" "
 				cmd += "-d '" + string(bytes) + "' "
 			}

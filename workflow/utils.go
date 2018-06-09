@@ -69,15 +69,6 @@ func PopulateRequirements(contract *model.Contract) {
 			}
 		}
 
-		// headers requirements
-		for _, val := range endpoint.Headers {
-			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
-				for _, match := range submatches {
-					endpoint.Requires = append(endpoint.Requires, match)
-				}
-			}
-		}
-
 		// queryString requirements
 		for _, val := range endpoint.QueryStrings {
 			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
@@ -87,8 +78,19 @@ func PopulateRequirements(contract *model.Contract) {
 			}
 		}
 
-		// request requirements
-		discoverRequestRequirements(endpoint.Request, &endpoint.Requires)
+		// headers requirements
+		for _, val := range endpoint.Request.Headers {
+			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
+				for _, match := range submatches {
+					endpoint.Requires = append(endpoint.Requires, match)
+				}
+			}
+		}
+
+		if endpoint.Request.Content != nil {
+			// request requirements
+			discoverRequestRequirements(endpoint.Request.Content.Example, &endpoint.Requires)
+		}
 
 		if len(endpoint.Requires) != 0 {
 			fmt.Println("endpoint", endpoint.Method, endpoint.URI, "requires following placeholders:", endpoint.Requires)
