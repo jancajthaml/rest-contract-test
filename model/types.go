@@ -39,5 +39,5 @@ type Contract struct {
 	Source    string
 	Type      string
 	Name      string
-	Endpoints []Endpoint
+	Endpoints []*Endpoint
 }

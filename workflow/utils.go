@@ -25,12 +25,12 @@ import (
 
 var placeholderPattern = regexp.MustCompile(`(?:\{|\<{2}).{1,100}?(?:\}|\>{2})`)
 
-func discoverRequestRequirements(request interface{}, requirements *[]string) {
+func discoverContentPlaceholders(request interface{}, requirements *[]string) {
 	switch x := request.(type) {
 
 	case map[string]interface{}:
 		for _, v := range x {
-			discoverRequestRequirements(v, requirements)
+			discoverContentPlaceholders(v, requirements)
 		}
 
 	case string:
@@ -42,17 +42,17 @@ func discoverRequestRequirements(request interface{}, requirements *[]string) {
 
 	case map[interface{}]interface{}:
 		for _, v := range x {
-			discoverRequestRequirements(v, requirements)
+			discoverContentPlaceholders(v, requirements)
 		}
 
 	case []interface{}:
 		for _, v := range x {
-			discoverRequestRequirements(v, requirements)
+			discoverContentPlaceholders(v, requirements)
 		}
 
 	case []string:
 		for _, v := range x {
-			discoverRequestRequirements(v, requirements)
+			discoverContentPlaceholders(v, requirements)
 		}
 
 	}
@@ -89,12 +89,12 @@ func PopulateRequirements(contract *model.Contract) {
 
 		if endpoint.Request.Content != nil {
 			// request requirements
-			discoverRequestRequirements(endpoint.Request.Content.Example, &endpoint.Requires)
+			discoverContentPlaceholders(endpoint.Request.Content.Example, &endpoint.Requires)
 		}
 
-		if len(endpoint.Requires) != 0 {
-			fmt.Println("endpoint", endpoint.Method, endpoint.URI, "requires following placeholders:", endpoint.Requires)
-		}
+		//if len(endpoint.Requires) != 0 {
+		//fmt.Println("endpoint", endpoint.Method, endpoint.URI, "requires following placeholders:", endpoint.Requires)
+		//}
 	}
 
 	return
@@ -112,18 +112,25 @@ func PopulateProvisions(contract *model.Contract) {
 	for _, pair := range os.Environ() {
 		providing := strings.Split(pair, "=")[0]
 		alias := strings.Replace(strings.ToLower(providing), "_", "-", -1)
-		globals = append(globals, providing)
-		if alias != providing {
-			globals = append(globals, alias)
-		}
+		//globals = append(globals, providing)
+		//if alias != providing {
+		globals = append(globals, alias)
+		//}
 	}
-
-	//globals := make([]string, 0)
 
 	// responses provisions
 	for _, endpoint := range contract.Endpoints {
+		//endpoint.Provides = make([]string, len(globals))
+		//copy(endpoint.Provides, globals)
+
+	inner:
 		for code, response := range endpoint.Responses {
-			fmt.Println("provision detection of", code, response.Content)
+			//fmt.Println("checking (2)", endpoint.Method, endpoint.URI, code)
+
+			if code != 200 {
+				continue inner
+			}
+			//fmt.Println("provision detection of", code, response.Content)
 
 			// response headers provisions
 			for _, val := range response.Headers {
@@ -134,11 +141,16 @@ func PopulateProvisions(contract *model.Contract) {
 					}
 				}
 			}
+
+			if response.Content != nil {
+				// request requirements
+				discoverContentPlaceholders(response.Content.Example, &endpoint.Provides)
+			}
 		}
 
-		if len(endpoint.Provides) != 0 {
-			fmt.Println("endpoint", endpoint.Method, endpoint.URI, "requires following placeholders:", endpoint.Requires)
-		}
+		//if len(endpoint.Provides) != 0 {
+		//fmt.Println("endpoint", endpoint.Method, endpoint.URI, "provides following placeholders:", endpoint.Provides)
+		//}
 	}
 
 	//if len(globals) != 0 {

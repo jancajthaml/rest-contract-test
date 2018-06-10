@@ -41,8 +41,10 @@ func CmdTest(c *cli.Context) error {
 	workflow.PopulateRequirements(contract)
 	workflow.PopulateProvisions(contract)
 
+	// FIXME wait here
+
 	for _, endpoint := range contract.Endpoints {
-		fmt.Println("responses", endpoint.Responses)
+		fmt.Println(endpoint.Method, endpoint.URI, "requires:", endpoint.Requires, "provides:", endpoint.Provides)
 	}
 
 	return nil

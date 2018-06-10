@@ -36,6 +36,12 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func CopySlice(ref []string) []string {
+	clone := make([]string, len(ref))
+	copy(clone, ref)
+	return clone
+}
+
 func CopyMap(ref map[string]string) map[string]string {
 	clone := make(map[string]string)
 	for k, v := range ref {
@@ -54,7 +60,7 @@ func RandValue(kind string) string {
 	switch kind {
 	case "string":
 
-	    output := make([]byte, size)
+		output := make([]byte, size)
 		randomness := make([]byte, size)
 
 		if _, err := rand.Read(randomness); err != nil {
@@ -86,7 +92,7 @@ func RandValue(kind string) string {
 			output[pos] = numbers[randomPos]
 		}
 		return string(output)
-	
+
 	default:
 		return ""
 

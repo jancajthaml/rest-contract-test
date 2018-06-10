@@ -220,8 +220,11 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 		}
 	}
 
+	// FIXME copy from responses
 	rs := make(map[int]model.Payload, 0)
 	if len(method.Responses) != 0 {
+		//fmt.Println("checking (0)", kind, path)
+
 		for code, response := range method.Responses {
 			if response.Referenced != nil {
 				fmt.Println("response is referenced")
@@ -240,7 +243,7 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 		}
 	}
 	if method.Bodies == nil {
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+		contract.Endpoints = append(contract.Endpoints, &model.Endpoint{
 			URI:          path,
 			Method:       kind,
 			QueryStrings: queryStrings,
@@ -254,7 +257,7 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 
 	bodies := processBodies(nil, method.Bodies)
 	for _, payload := range bodies {
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+		contract.Endpoints = append(contract.Endpoints, &model.Endpoint{
 			URI:          path,
 			Method:       kind,
 			QueryStrings: queryStrings,
@@ -262,7 +265,7 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 				Headers: headers,
 				Content: &payload,
 			},
-			Responses: responses,
+			Responses: rs,
 		})
 	}
 
@@ -382,7 +385,7 @@ func walk(contract *model.Contract, path string, resource *Resource,
 	if !found {
 		qs = CopyMap(queryStrings)
 		hds = CopyMap(headers)
-		contract.Endpoints = append(contract.Endpoints, model.Endpoint{
+		contract.Endpoints = append(contract.Endpoints, &model.Endpoint{
 			URI:          path,
 			Method:       "GET",
 			QueryStrings: qs,
