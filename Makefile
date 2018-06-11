@@ -64,5 +64,5 @@ bbtest:
 		VERSION=1 \
 		PORT=8080 \
 		X="xValue" \
-		Y="yValue" \
+		SUPER_VALUE="filledSuperValue" \
 		$(ct) test bbtest/raml/api.raml

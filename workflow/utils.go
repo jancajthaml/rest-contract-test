@@ -15,7 +15,6 @@
 package workflow
 
 import (
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -131,34 +130,27 @@ func PopulateRequirements(contract *model.Contract) {
 		}
 
 		// queryString requirements
-		for _, val := range endpoint.QueryStrings {
+		for k, val := range endpoint.QueryStrings {
 			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 				for _, match := range submatches {
 					if rv, ok := globals[match]; ok {
-						fmt.Println("queryString requirement would be satisfied by env", match)
-						fmt.Println("now must replace value", match, "in", val, "with", rv)
-					} else {
-						endpoint.Requires.Add(match)
+						endpoint.QueryStrings[k] = strings.Replace(val, match, rv, -1)
+						continue
 					}
-					//endpoint.Requires.Add(match)
-					//fmt.Println("queryString", match)
+					endpoint.Requires.Add(match)
 				}
 			}
 		}
 
 		// headers requirements
-		for _, val := range endpoint.Request.Headers {
+		for k, val := range endpoint.Request.Headers {
 			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 				for _, match := range submatches {
-					//endpoint.Requires.Add(match)
-					//fmt.Println("headers", match)
-
 					if rv, ok := globals[match]; ok {
-						fmt.Println("headers requirement would be satisfied by env", match)
-						fmt.Println("now must replace value", match, "in", val, "with", rv)
-					} else {
-						endpoint.Requires.Add(match)
+						endpoint.Request.Headers[k] = strings.Replace(val, match, rv, -1)
+						continue
 					}
+					endpoint.Requires.Add(match)
 				}
 			}
 		}

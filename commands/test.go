@@ -39,10 +39,19 @@ func CmdTest(c *cli.Context) error {
 
 	Sort(contract)
 
+	fmt.Println("#########")
+
 	for _, endpoint := range contract.Endpoints {
 		fmt.Println(endpoint.Method, endpoint.URI, "requires:", endpoint.Requires, "provides:", endpoint.Provides)
 		//fmt.Println(endpoint.Method, endpoint.URI)
 	}
+
+	fmt.Println("#########")
+	for _, endpoint := range contract.Endpoints {
+		fmt.Println(GenerateCurl(endpoint))
+		//fmt.Println(endpoint.Method, endpoint.URI)
+	}
+	fmt.Println("#########")
 
 	return nil
 }
@@ -66,7 +75,7 @@ func Sort(contract *model.Contract) {
 	workflow.CalculateOrdering(contract)
 }
 
-func GenerateCurl(ref model.Endpoint) string {
+func GenerateCurl(ref *model.Endpoint) string {
 	qs := model.Urlencode(ref.QueryStrings)
 	if len(qs) != 0 {
 		qs = "?" + qs
