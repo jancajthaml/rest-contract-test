@@ -15,7 +15,6 @@
 package workflow
 
 import (
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -25,34 +24,34 @@ import (
 
 var placeholderPattern = regexp.MustCompile(`(?:\{|\<{2}).{1,100}?(?:\}|\>{2})`)
 
-func discoverContentPlaceholders(request interface{}, requirements *[]string) {
+func discoverContentPlaceholders(request interface{}, set *model.Set) {
 	switch x := request.(type) {
 
 	case map[string]interface{}:
 		for _, v := range x {
-			discoverContentPlaceholders(v, requirements)
+			discoverContentPlaceholders(v, set)
 		}
 
 	case string:
 		for _, submatches := range placeholderPattern.FindAllStringSubmatch(x, -1) {
 			for _, match := range submatches {
-				*requirements = append(*requirements, match)
+				set.Add(match)
 			}
 		}
 
 	case map[interface{}]interface{}:
 		for _, v := range x {
-			discoverContentPlaceholders(v, requirements)
+			discoverContentPlaceholders(v, set)
 		}
 
 	case []interface{}:
 		for _, v := range x {
-			discoverContentPlaceholders(v, requirements)
+			discoverContentPlaceholders(v, set)
 		}
 
 	case []string:
 		for _, v := range x {
-			discoverContentPlaceholders(v, requirements)
+			discoverContentPlaceholders(v, set)
 		}
 
 	}
@@ -61,11 +60,12 @@ func discoverContentPlaceholders(request interface{}, requirements *[]string) {
 
 func PopulateRequirements(contract *model.Contract) {
 	for _, endpoint := range contract.Endpoints {
+		endpoint.Requires = model.NewSet()
 
 		// uri requirements
 		for _, submatches := range placeholderPattern.FindAllStringSubmatch(endpoint.URI, -1) {
 			for _, match := range submatches {
-				endpoint.Requires = append(endpoint.Requires, match)
+				endpoint.Requires.Add(match)
 			}
 		}
 
@@ -73,7 +73,7 @@ func PopulateRequirements(contract *model.Contract) {
 		for _, val := range endpoint.QueryStrings {
 			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 				for _, match := range submatches {
-					endpoint.Requires = append(endpoint.Requires, match)
+					endpoint.Requires.Add(match)
 				}
 			}
 		}
@@ -82,82 +82,81 @@ func PopulateRequirements(contract *model.Contract) {
 		for _, val := range endpoint.Request.Headers {
 			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 				for _, match := range submatches {
-					endpoint.Requires = append(endpoint.Requires, match)
+					endpoint.Requires.Add(match)
 				}
 			}
 		}
 
+		// request requirements
 		if endpoint.Request.Content != nil {
-			// request requirements
 			discoverContentPlaceholders(endpoint.Request.Content.Example, &endpoint.Requires)
 		}
-
-		//if len(endpoint.Requires) != 0 {
-		//fmt.Println("endpoint", endpoint.Method, endpoint.URI, "requires following placeholders:", endpoint.Requires)
-		//}
 	}
 
 	return
 }
 
 func PopulateProvisions(contract *model.Contract) {
-	// FIXME separate ?
 
-	fmt.Println("populating provisions")
-
-	globals := make([]string, 0)
+	globals := model.NewSet()
 
 	// environment provisions
-
 	for _, pair := range os.Environ() {
 		providing := strings.Split(pair, "=")[0]
 		alias := strings.Replace(strings.ToLower(providing), "_", "-", -1)
-		//globals = append(globals, providing)
-		//if alias != providing {
-		globals = append(globals, alias)
-		//}
+		globals.Add(alias)
 	}
 
 	// responses provisions
 	for _, endpoint := range contract.Endpoints {
-		//endpoint.Provides = make([]string, len(globals))
-		//copy(endpoint.Provides, globals)
+		endpoint.Provides = globals.Copy()
 
 	inner:
 		for code, response := range endpoint.Responses {
-			//fmt.Println("checking (2)", endpoint.Method, endpoint.URI, code)
-
 			if code != 200 {
 				continue inner
 			}
-			//fmt.Println("provision detection of", code, response.Content)
 
 			// response headers provisions
 			for _, val := range response.Headers {
 				for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 					for _, match := range submatches {
-						//endpoint.Requires = append(endpoint.Requires, match)
-						endpoint.Provides = append(endpoint.Provides, match)
+						endpoint.Provides.Add(match)
 					}
 				}
 			}
 
+			// response content provisions
 			if response.Content != nil {
-				// request requirements
 				discoverContentPlaceholders(response.Content.Example, &endpoint.Provides)
 			}
 		}
 
-		//if len(endpoint.Provides) != 0 {
-		//fmt.Println("endpoint", endpoint.Method, endpoint.URI, "provides following placeholders:", endpoint.Provides)
-		//}
 	}
 
-	//if len(globals) != 0 {
-	//fmt.Println("globals provide:", globals)
-	//}
-
 	// TBD then response provisions ... info based on response code (prefix?)
+
+	return
+}
+
+func CalculateOrdering(contract *model.Contract) {
+	obtainables := model.NewSet()
+
+	for _, endpoint := range contract.Endpoints {
+		obtainables.AddAll(endpoint.Provides)
+	}
+
+	/*
+		fmt.Println(obtainables.AsSlice())
+
+		ordering_clean := make([]string, 0)
+		ordering_volatile := make([]string, 0)
+
+		satisfied_variables := model.NewSet()
+
+	*/
+
+	// FIXME TBD
 
 	return
 }

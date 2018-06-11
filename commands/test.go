@@ -43,8 +43,11 @@ func CmdTest(c *cli.Context) error {
 
 	// FIXME wait here
 
+	workflow.CalculateOrdering(contract)
+
 	for _, endpoint := range contract.Endpoints {
-		fmt.Println(endpoint.Method, endpoint.URI, "requires:", endpoint.Requires, "provides:", endpoint.Provides)
+		//fmt.Println(endpoint.Method, endpoint.URI, "requires:", endpoint.Requires, "provides:", endpoint.Provides)
+		fmt.Println(endpoint.Method, endpoint.URI)
 	}
 
 	return nil

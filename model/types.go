@@ -31,8 +31,8 @@ type Endpoint struct {
 	Responses    map[int]Payload
 	Request      Payload
 	QueryStrings map[string]string
-	Provides     []string
-	Requires     []string
+	Provides     Set
+	Requires     Set
 }
 
 type Contract struct {
