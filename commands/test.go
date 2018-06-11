@@ -37,27 +37,36 @@ func CmdTest(c *cli.Context) error {
 		return err
 	}
 
-	// FIXME in parallel
-	workflow.PopulateRequirements(contract)
-	workflow.PopulateProvisions(contract)
-
-	// FIXME wait here
-
-	workflow.CalculateOrdering(contract)
+	Sort(contract)
 
 	for _, endpoint := range contract.Endpoints {
-		//fmt.Println(endpoint.Method, endpoint.URI, "requires:", endpoint.Requires, "provides:", endpoint.Provides)
-		fmt.Println(endpoint.Method, endpoint.URI)
+		fmt.Println(endpoint.Method, endpoint.URI, "requires:", endpoint.Requires, "provides:", endpoint.Provides)
+		//fmt.Println(endpoint.Method, endpoint.URI)
 	}
 
 	return nil
 }
 
-// FIXME for debugging right now
+func Sort(contract *model.Contract) {
+	doneRequirements := make(chan bool)
+	doneProvisions := make(chan bool)
+
+	go func() {
+		workflow.PopulateRequirements(contract)
+		doneRequirements <- true
+	}()
+	go func() {
+		workflow.PopulateProvisions(contract)
+		doneProvisions <- true
+	}()
+
+	<-doneRequirements
+	<-doneProvisions
+
+	workflow.CalculateOrdering(contract)
+}
 
 func GenerateCurl(ref model.Endpoint) string {
-	//res := make([]string, 0)
-
 	qs := model.Urlencode(ref.QueryStrings)
 	if len(qs) != 0 {
 		qs = "?" + qs

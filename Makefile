@@ -60,4 +60,7 @@ bbtest:
 	@eval $(eval ct=$(shell sh -c 'find ./bin -type f -name "darwin*"' | awk '{print $$1}'))
 
 	@echo "[info] test bbtest"
-	@$(ct) test bbtest/raml/api.raml
+	@ \
+		VERSION=1 \
+		PORT=8080 \
+		$(ct) test bbtest/raml/api.raml

@@ -14,6 +14,8 @@
 
 package model
 
+import "fmt"
+
 // Set is set datastructure representing distinct slice
 type Set struct {
 	items map[string]interface{}
@@ -68,4 +70,9 @@ func (set *Set) Copy() Set {
 		clone[k] = nil
 	}
 	return Set{items: clone}
+}
+
+// String returns string representation of set
+func (set Set) String() string {
+	return fmt.Sprintf("%v", set.AsSlice())
 }

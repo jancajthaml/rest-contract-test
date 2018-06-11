@@ -15,6 +15,7 @@
 package workflow
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -59,21 +60,45 @@ func discoverContentPlaceholders(request interface{}, set *model.Set) {
 }
 
 func PopulateRequirements(contract *model.Contract) {
+	globals := make(map[string]string)
+
+	// environment provisions
+	for _, pair := range os.Environ() {
+		providing := strings.Split(pair, "=")
+
+		alias := strings.Replace(strings.ToLower(providing[0]), "_", "-", -1)
+		globals["<<"+alias+">>"] = providing[1]
+		globals["{"+alias+"}"] = providing[1]
+		// FIXME maybe alias also to camelCase and PascalCase for old-time folks
+	}
+
 	for _, endpoint := range contract.Endpoints {
 		endpoint.Requires = model.NewSet()
 
 		// uri requirements
 		for _, submatches := range placeholderPattern.FindAllStringSubmatch(endpoint.URI, -1) {
 			for _, match := range submatches {
+				if rv, ok := globals[match]; ok {
+					endpoint.URI = strings.Replace(endpoint.URI, match, rv, -1)
+					continue
+				}
 				endpoint.Requires.Add(match)
 			}
+
 		}
 
 		// queryString requirements
 		for _, val := range endpoint.QueryStrings {
 			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 				for _, match := range submatches {
-					endpoint.Requires.Add(match)
+					if rv, ok := globals[match]; ok {
+						fmt.Println("queryString requirement would be satisfied by env", match)
+						fmt.Println("now must replace value", match, "in", val, "with", rv)
+					} else {
+						endpoint.Requires.Add(match)
+					}
+					//endpoint.Requires.Add(match)
+					//fmt.Println("queryString", match)
 				}
 			}
 		}
@@ -82,7 +107,15 @@ func PopulateRequirements(contract *model.Contract) {
 		for _, val := range endpoint.Request.Headers {
 			for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 				for _, match := range submatches {
-					endpoint.Requires.Add(match)
+					//endpoint.Requires.Add(match)
+					//fmt.Println("headers", match)
+
+					if rv, ok := globals[match]; ok {
+						fmt.Println("headers requirement would be satisfied by env", match)
+						fmt.Println("now must replace value", match, "in", val, "with", rv)
+					} else {
+						endpoint.Requires.Add(match)
+					}
 				}
 			}
 		}
@@ -97,19 +130,9 @@ func PopulateRequirements(contract *model.Contract) {
 }
 
 func PopulateProvisions(contract *model.Contract) {
-
-	globals := model.NewSet()
-
-	// environment provisions
-	for _, pair := range os.Environ() {
-		providing := strings.Split(pair, "=")[0]
-		alias := strings.Replace(strings.ToLower(providing), "_", "-", -1)
-		globals.Add(alias)
-	}
-
 	// responses provisions
 	for _, endpoint := range contract.Endpoints {
-		endpoint.Provides = globals.Copy()
+		endpoint.Provides = model.NewSet()
 
 	inner:
 		for code, response := range endpoint.Responses {
@@ -140,11 +163,10 @@ func PopulateProvisions(contract *model.Contract) {
 }
 
 func CalculateOrdering(contract *model.Contract) {
-	obtainables := model.NewSet()
 
-	for _, endpoint := range contract.Endpoints {
-		obtainables.AddAll(endpoint.Provides)
-	}
+	//for _, endpoint := range contract.Endpoints {
+	//obtainables.AddAll(endpoint.Provides)
+	//}
 
 	/*
 		fmt.Println(obtainables.AsSlice())
