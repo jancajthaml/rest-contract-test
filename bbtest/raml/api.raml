@@ -24,7 +24,7 @@ types:
       Accept:
         example: application/json
 
-/{version}/person/{person-id}:
+/v{version}/person/{person-id}:
   get:
     responses:
       200:
@@ -40,7 +40,7 @@ types:
             type: PersonData
             example: !include example.person_data.json
 
-/{version}/person:
+/v{version}/person:
   post:
     body:
       application/json:

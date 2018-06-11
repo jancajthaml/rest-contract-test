@@ -63,4 +63,6 @@ bbtest:
 	@ \
 		VERSION=1 \
 		PORT=8080 \
+		X="xValue" \
+		Y="yValue" \
 		$(ct) test bbtest/raml/api.raml

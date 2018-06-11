@@ -25,38 +25,81 @@ import (
 
 var placeholderPattern = regexp.MustCompile(`(?:\{|\<{2}).{1,100}?(?:\}|\>{2})`)
 
-func discoverContentPlaceholders(request interface{}, set *model.Set) {
-	switch x := request.(type) {
+func walkAndReplaceContent(globals map[string]string, variable interface{}, set *model.Set) interface{} {
 
-	case map[string]interface{}:
-		for _, v := range x {
-			discoverContentPlaceholders(v, set)
-		}
+	switch val := variable.(type) {
 
 	case string:
-		for _, submatches := range placeholderPattern.FindAllStringSubmatch(x, -1) {
+		clone := val
+		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 			for _, match := range submatches {
+				if rv, ok := globals[match]; ok {
+					clone = strings.Replace(clone, match, rv, -1)
+					continue
+				}
+				
+				set.Add(match)
+			}
+		}
+		return clone
+
+	case map[string]interface{}:
+		for k, v := range val {
+			val[k] = walkAndReplaceContent(globals, v, set)
+		}
+
+	case map[interface{}]interface{}:
+		for k, v := range val {
+			val[k] = walkAndReplaceContent(globals, v, set)
+		}
+
+	case []interface{}:
+		for k, v := range val {
+			val[k] = walkAndReplaceContent(globals, v, set)
+		}
+
+	case []string:
+		for k, v := range val {
+			val[k] = walkAndReplaceContent(globals, v, set).(string)
+		}
+
+	}
+
+	return variable
+}
+
+func walkContent(variable interface{}, set *model.Set) {
+
+	switch val := variable.(type) {
+
+	case string:
+		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
+			for _, match := range submatches {				
 				set.Add(match)
 			}
 		}
 
+	case map[string]interface{}:
+		for _, v := range val {
+			walkContent(v, set)
+		}
+
 	case map[interface{}]interface{}:
-		for _, v := range x {
-			discoverContentPlaceholders(v, set)
+		for _, v := range val {
+			walkContent(v, set)
 		}
 
 	case []interface{}:
-		for _, v := range x {
-			discoverContentPlaceholders(v, set)
+		for _, v := range val {
+			walkContent(v, set)
 		}
 
 	case []string:
-		for _, v := range x {
-			discoverContentPlaceholders(v, set)
+		for _, v := range val {
+			walkContent(v, set)
 		}
 
 	}
-	return
 }
 
 func PopulateRequirements(contract *model.Contract) {
@@ -122,7 +165,7 @@ func PopulateRequirements(contract *model.Contract) {
 
 		// request requirements
 		if endpoint.Request.Content != nil {
-			discoverContentPlaceholders(endpoint.Request.Content.Example, &endpoint.Requires)
+			walkAndReplaceContent(globals, endpoint.Request.Content.Example, &endpoint.Requires)
 		}
 	}
 
@@ -151,7 +194,7 @@ func PopulateProvisions(contract *model.Contract) {
 
 			// response content provisions
 			if response.Content != nil {
-				discoverContentPlaceholders(response.Content.Example, &endpoint.Provides)
+				walkContent(response.Content.Example, &endpoint.Provides)
 			}
 		}
 
