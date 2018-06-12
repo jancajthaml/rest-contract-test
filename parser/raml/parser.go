@@ -81,7 +81,7 @@ func NewRaml(file string) (*model.Contract, error) {
 	if err != nil {
 		return contract, err
 	}
-	
+
 	contract.Name = rootResource.Title
 
 	eventualQueryParamsSecurity := make(chan map[string]map[string]string)
@@ -188,20 +188,17 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 	if method.Headers != nil {
 		for name, parameter := range method.Headers.Data {
 			if parameter.Example != nil {
-				fmt.Println("processing header", name, parameter.Example)
-
 				switch typed := parameter.Example.(type) {
 				case string:
 					headers[name] = strings.Replace(typed, "\n", "", -1)
 				case int:
 					headers[name] = strconv.Itoa(typed)
 				case map[interface{}]interface{}:
-				    for k := range typed {
-				        headers[name] = "{"+k.(string)+"}"
-				        break
-				    }
+					for k := range typed {
+						headers[name] = "{" + k.(string) + "}"
+						break
+					}
 				}
-
 			} else if parameter.Enum != nil {
 				headers[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]
 			} else if len(parameter.Type) != 0 {
@@ -219,10 +216,10 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 				case int:
 					queryStrings[name] = strconv.Itoa(typed)
 				case map[interface{}]interface{}:
-				    for k := range typed {
-				        queryStrings[name] = "{"+k.(string)+"}"
-				        break
-				    }
+					for k := range typed {
+						queryStrings[name] = "{" + k.(string) + "}"
+						break
+					}
 				}
 			} else if parameter.Enum != nil {
 				queryStrings[name] = parameter.Enum[rand.Intn(len(parameter.Enum)-1)]

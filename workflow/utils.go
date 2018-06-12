@@ -15,6 +15,7 @@
 package workflow
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -36,7 +37,7 @@ func walkAndReplaceContent(globals map[string]string, variable interface{}, set 
 					clone = strings.Replace(clone, match, rv, -1)
 					continue
 				}
-				
+
 				set.Add(match)
 			}
 		}
@@ -73,7 +74,7 @@ func walkContent(variable interface{}, set *model.Set) {
 
 	case string:
 		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
-			for _, match := range submatches {				
+			for _, match := range submatches {
 				set.Add(match)
 			}
 		}
@@ -199,12 +200,16 @@ func PopulateProvisions(contract *model.Contract) {
 
 func CalculateOrdering(contract *model.Contract) {
 
-	//for _, endpoint := range contract.Endpoints {
-	//obtainables.AddAll(endpoint.Provides)
-	//}
+	obtainables := model.NewSet()
+
+	for _, endpoint := range contract.Endpoints {
+		obtainables.AddAll(endpoint.Provides)
+	}
+
+	fmt.Println("obtainable provisions", obtainables.AsSlice())
 
 	/*
-		fmt.Println(obtainables.AsSlice())
+
 
 		ordering_clean := make([]string, 0)
 		ordering_volatile := make([]string, 0)
