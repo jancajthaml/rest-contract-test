@@ -72,6 +72,19 @@ services:
     extends: go
     entrypoint: ["/opt/lifecycle/package"]
 
+  # -------------------------------------------------------------------------- #
+
+  testee:
+    hostname: testee
+    build:
+      dockerfile: Dockerfile
+      context: bbtest
+    image: jancajthaml/rest-contract-test-bbtest
+    ports:
+      - "8080:8080/tcp"
+
+  # -------------------------------------------------------------------------- #
+
   test:
     extends: go
     command: ["test", "-v", "./...", "-timeout=20s"]

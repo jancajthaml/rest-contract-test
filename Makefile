@@ -58,7 +58,7 @@ verify:
 .PHONY: bbtest
 bbtest:
 	@eval $(eval ct=$(shell sh -c 'find ./bin -type f -name "darwin*"' | awk '{print $$1}'))
-
+	#docker-compose run --rm --service-ports testee
 	@echo "[info] test bbtest"
 	@ \
 		VERSION=1 \
