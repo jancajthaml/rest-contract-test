@@ -27,14 +27,14 @@ types:
         example: {super-value}
 
 /v{version}/person/{person-id}:
-  get:
+  delete:
     responses:
       200:
         body:
           application/json:
             type: PersonData
             example: !include example.person_data.json
-  delete:
+  get:
     responses:
       200:
         body:

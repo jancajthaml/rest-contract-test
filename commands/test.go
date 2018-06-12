@@ -72,7 +72,7 @@ func Sort(contract *model.Contract) {
 	<-doneRequirements
 	<-doneProvisions
 
-	workflow.CalculateOrdering(contract)
+	workflow.SortEndpoints(contract)
 }
 
 func GenerateCurl(ref *model.Endpoint) string {

@@ -15,7 +15,6 @@
 package workflow
 
 import (
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -198,27 +197,47 @@ func PopulateProvisions(contract *model.Contract) {
 	return
 }
 
-func CalculateOrdering(contract *model.Contract) {
+func SortEndpoints(contract *model.Contract) {
+	resolved := make(map[int]interface{})
 
 	obtainables := model.NewSet()
+	requirables := model.NewSet()
 
-	for _, endpoint := range contract.Endpoints {
+	for idx, endpoint := range contract.Endpoints {
 		obtainables.AddAll(endpoint.Provides)
+		requirables.AddAll(endpoint.Requires)
+		resolved[idx] = nil
 	}
 
-	fmt.Println("obtainable provisions", obtainables.AsSlice())
+	ordering := make([]int, 0)
+	satisfied := model.NewSet()
 
-	/*
+	for len(resolved) > 0 {
+		scan: for idx := range resolved {
+			endpoint := contract.Endpoints[idx]
 
+			for _, requirement := range endpoint.Requires.AsSlice() { // FIXME better
+				if !obtainables.Contains(requirement) {
+					delete(resolved, idx)
+					continue scan
+				}
+				if !satisfied.Contains(requirement) {
+					continue scan
+				}
+			}
 
-		ordering_clean := make([]string, 0)
-		ordering_volatile := make([]string, 0)
+			satisfied.AddAll(endpoint.Provides)
+			ordering = append(ordering, idx)
+			delete(resolved, idx)
+		}
+	}
 
-		satisfied_variables := model.NewSet()
+	reorder := make([]*model.Endpoint, len(contract.Endpoints))
+	for i, j := range ordering {
+		reorder[i] = contract.Endpoints[j]
+	}
 
-	*/
-
-	// FIXME TBD
+	contract.Endpoints = reorder
 
 	return
 }
