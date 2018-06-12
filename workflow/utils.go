@@ -18,6 +18,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"fmt"
 
 	"github.com/jancajthaml/rest-contract-test/model"
 )
@@ -197,8 +198,8 @@ func PopulateProvisions(contract *model.Contract) {
 	return
 }
 
-func SortEndpoints(contract *model.Contract) {
-	resolved := make(map[int]interface{})
+func SortEndpoints(contract *model.Contract) error {
+	notResolved := make(map[int]interface{})
 
 	obtainables := model.NewSet()
 	requirables := model.NewSet()
@@ -206,19 +207,26 @@ func SortEndpoints(contract *model.Contract) {
 	for idx, endpoint := range contract.Endpoints {
 		obtainables.AddAll(endpoint.Provides)
 		requirables.AddAll(endpoint.Requires)
-		resolved[idx] = nil
+		notResolved[idx] = nil
 	}
 
 	ordering := make([]int, 0)
 	satisfied := model.NewSet()
 
-	for len(resolved) > 0 {
-		scan: for idx := range resolved {
+	var limit = len(contract.Endpoints) * len(contract.Endpoints) 
+
+	for len(notResolved) > 0 {
+		if limit == 0 {
+			return fmt.Errorf("could not sort endpoints")
+		}
+		limit -= 0
+
+		scan: for idx := range notResolved {
 			endpoint := contract.Endpoints[idx]
 
 			for _, requirement := range endpoint.Requires.AsSlice() { // FIXME better
 				if !obtainables.Contains(requirement) {
-					delete(resolved, idx)
+					delete(notResolved, idx)
 					continue scan
 				}
 				if !satisfied.Contains(requirement) {
@@ -228,7 +236,7 @@ func SortEndpoints(contract *model.Contract) {
 
 			satisfied.AddAll(endpoint.Provides)
 			ordering = append(ordering, idx)
-			delete(resolved, idx)
+			delete(notResolved, idx)
 		}
 	}
 
@@ -239,5 +247,5 @@ func SortEndpoints(contract *model.Contract) {
 
 	contract.Endpoints = reorder
 
-	return
+	return nil
 }

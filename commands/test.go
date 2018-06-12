@@ -22,8 +22,7 @@ import (
 	"github.com/jancajthaml/rest-contract-test/model"
 	"github.com/jancajthaml/rest-contract-test/parser"
 	"github.com/jancajthaml/rest-contract-test/workflow"
-
-	"encoding/json"
+	"github.com/jancajthaml/rest-contract-test/http"
 )
 
 func CmdTest(c *cli.Context) error {
@@ -37,21 +36,16 @@ func CmdTest(c *cli.Context) error {
 		return err
 	}
 
+	client := http.NewHttpClient()
+
 	Sort(contract)
 
-	fmt.Println("#########")
-
 	for _, endpoint := range contract.Endpoints {
-		fmt.Println(endpoint.Method, endpoint.URI, "requires:", endpoint.Requires, "provides:", endpoint.Provides)
-		//fmt.Println(endpoint.Method, endpoint.URI)
+		err := client.Call(endpoint)
+		if err != nil {
+			fmt.Println("ERROR |", *endpoint)
+		}
 	}
-
-	fmt.Println("#########")
-	for _, endpoint := range contract.Endpoints {
-		fmt.Println(GenerateCurl(endpoint))
-		//fmt.Println(endpoint.Method, endpoint.URI)
-	}
-	fmt.Println("#########")
 
 	return nil
 }
@@ -73,41 +67,4 @@ func Sort(contract *model.Contract) {
 	<-doneProvisions
 
 	workflow.SortEndpoints(contract)
-}
-
-func GenerateCurl(ref *model.Endpoint) string {
-	qs := model.Urlencode(ref.QueryStrings)
-	if len(qs) != 0 {
-		qs = "?" + qs
-	}
-
-	cmd := "curl -v -L "
-
-	switch ref.Method {
-	case "PUT":
-		cmd += "-X PUT "
-	case "POST":
-		cmd += "-X POST "
-	case "PATCH":
-		cmd += "-X PATCH "
-	case "DELETE":
-		cmd += "-X DELETE "
-	}
-
-	for k, v := range ref.Request.Headers {
-		cmd += "-H \"" + k + ": " + v + "\" "
-	}
-
-	if ref.Request.Content != nil {
-		switch ref.Request.Content.Type {
-		case "application/json":
-			if bytes, err := json.Marshal(ref.Request.Content.Example); err == nil {
-				cmd += "-H \"Content-Type: " + ref.Request.Content.Type + "\" "
-				cmd += "-H \"Accept: application/json\" "
-				cmd += "-d '" + string(bytes) + "' "
-			}
-		}
-	}
-
-	return cmd + ref.URI + qs
 }

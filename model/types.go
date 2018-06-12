@@ -14,6 +14,8 @@
 
 package model
 
+import "encoding/json"
+
 type Payload struct {
 	Content *Content
 	Headers map[string]string
@@ -40,4 +42,41 @@ type Contract struct {
 	Type      string
 	Name      string
 	Endpoints []*Endpoint
+}
+
+func (ref Endpoint) String() string {
+	qs := Urlencode(ref.QueryStrings)
+	if len(qs) != 0 {
+		qs = "?" + qs
+	}
+
+	cmd := "curl -v -L "
+
+	switch ref.Method {
+	case "PUT":
+		cmd += "-X PUT "
+	case "POST":
+		cmd += "-X POST "
+	case "PATCH":
+		cmd += "-X PATCH "
+	case "DELETE":
+		cmd += "-X DELETE "
+	}
+
+	for k, v := range ref.Request.Headers {
+		cmd += "-H \"" + k + ": " + v + "\" "
+	}
+
+	if ref.Request.Content != nil {
+		switch ref.Request.Content.Type {
+		case "application/json":
+			if bytes, err := json.Marshal(ref.Request.Content.Example); err == nil {
+				cmd += "-H \"Content-Type: " + ref.Request.Content.Type + "\" "
+				cmd += "-H \"Accept: application/json\" "
+				cmd += "-d '" + string(bytes) + "' "
+			}
+		}
+	}
+
+	return cmd + ref.URI + qs
 }

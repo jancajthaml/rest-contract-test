@@ -1,5 +1,5 @@
 {
   "firstName": "John",
-  "lastName": "Doe",
+  "lastName": "{last-name}",
   "active": true
 }
