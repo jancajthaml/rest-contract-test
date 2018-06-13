@@ -71,6 +71,7 @@ services:
   package:
     extends: go
     entrypoint: ["/opt/lifecycle/package"]
+    command: ["-t", "linux"]
 
   # -------------------------------------------------------------------------- #
 

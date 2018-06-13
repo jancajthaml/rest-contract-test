@@ -4,56 +4,83 @@ set -eo pipefail
 
 trap exit INT TERM
 
-################################################################################
-
 dist=bin
-platforms=(linux darwin)
-#platforms=(darwin)
+version=latest
+platforms=(darwin)
+
+
+
 
 ################################################################################
 
-echo "[info] cleaning"
-
-if [ -d ${dist} ] && [ "$(ls -A ${dist})" ] ; then
-  go clean
-  rm -rf ${dist}/*
-fi
-
-if [ -n "${VERSION}" ] ; then
-  version="${VERSION}"
-elif [ -n "${GIT_TAG_NAME}" ] && [[ "${GIT_TAG_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]] ; then
-  version="${GIT_TAG_NAME}"
-else
-  version="snapshot"
-fi
-
-################################################################################
+get_version() {
+  if [ -n "${VERSION}" ] ; then
+    echo "${VERSION}"
+  elif [ -n "${GIT_TAG_NAME}" ] && [[ "${GIT_TAG_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]] ; then
+    echo "${GIT_TAG_NAME}"
+  else
+    echo "${version}"
+  fi
+}
 
 package_service() {
-  echo "[info] building for ${1}"
+  output=${1}/${2}-${3}
 
-  GOOS=${1} \
+  if [ -f ${output} ] ; then
+    rm -f ${output}
+  fi
+
+  echo "[info] packaging for ${2}"
+
+  GOOS=${2} \
   GOARCH=amd64 \
   CGO_ENABLED=0 \
-  go build -a -o ${dist}/${1}-${version} \
-    --ldflags "-X main.version=$version"
-
-  if [ $? -eq 0 ] ; then
-    chmod +x ${dist}/${1}-${version}
-  else
+  \
+  go build -a -o ${output} \
+  \
+  --ldflags "-X main.version=${3}" || {
+    (>&2 echo "unable to build ${2} distribution")
     exit 1
-  fi
+  }
+
+  chmod +x ${output}
 }
 
 ################################################################################
 
-echo "[info] building ${version}"
+while [[ $# -gt 0 ]] ; do
+key="$1"
 
-for platform in "${platforms[@]}" ; do
-  package_service ${platform} &
+case $key in
+    -t|--target)
+    IFS=',' read -ra platforms <<< "$2"
+    shift
+    shift
+    ;;
+    -o|--output)
+    dist="$2"
+    shift
+    shift
+    ;;
+    *)
+    shift
+    ;;
+esac
 done
-wait
+
+################################################################################
+
+echo "[info] cleaning"
+go clean
+
+echo "[info] packaging ${version}"
+version=$(get_version)
+for platform in "${platforms[@]}" ; do
+  (package_service ${dist} ${platform} ${version}) #&
+done
+#wait
 
 echo "[info] done"
+ls -1 ${dist} | sed "s/.*/       + ${dist}\/&/"
 
 ################################################################################
