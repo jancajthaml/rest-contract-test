@@ -74,12 +74,12 @@ services:
 
   # -------------------------------------------------------------------------- #
 
-  testee:
-    hostname: testee
+  ramltestee:
+    hostname: ramltestee
     build:
       dockerfile: Dockerfile
-      context: bbtest
-    image: jancajthaml/rest-contract-test-bbtest
+      context: bbtest/raml
+    image: jancajthaml/rest-contract-test-ramltestee
     ports:
       - "8080:8080/tcp"
 
@@ -88,6 +88,25 @@ services:
   test:
     extends: go
     command: ["test", "-v", "./...", "-timeout=20s"]
+
+  # -------------------------------------------------------------------------- #
+
+  bbtest:
+    build:
+      dockerfile: bbtest/Dockerfile
+      context: .
+    image: jancajthaml/rest-contract-test-bbtest
+    working_dir: /opt/bbtest
+    environment:
+      - COMPOSE_PROJECT_NAME
+      - VERSION
+      - PORT=8080
+    volumes:
+      - ./reports:/reports
+      - ./bbtest:/opt/bbtest
+      - ./bin:/opt/binaries
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers
 
   # -------------------------------------------------------------------------- #
 

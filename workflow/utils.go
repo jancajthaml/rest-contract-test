@@ -18,7 +18,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"fmt"
 
 	"github.com/jancajthaml/rest-contract-test/model"
 )
@@ -199,7 +198,7 @@ func PopulateProvisions(contract *model.Contract) {
 }
 
 func SortEndpoints(contract *model.Contract) error {
-	notResolved := make(map[int]interface{})
+	notResolved := make(map[int]bool)
 
 	obtainables := model.NewSet()
 	requirables := model.NewSet()
@@ -207,41 +206,63 @@ func SortEndpoints(contract *model.Contract) error {
 	for idx, endpoint := range contract.Endpoints {
 		obtainables.AddAll(endpoint.Provides)
 		requirables.AddAll(endpoint.Requires)
-		notResolved[idx] = nil
+		notResolved[idx] = true
 	}
 
 	ordering := make([]int, 0)
 	satisfied := model.NewSet()
 
-	var limit = len(contract.Endpoints) * len(contract.Endpoints) 
+	var (
+		last    = 0
+		current = len(notResolved)
+	)
 
-	for len(notResolved) > 0 {
-		if limit == 0 {
-			return fmt.Errorf("could not sort endpoints")
-		}
-		limit -= 0
+	for current > 0 {
+		last = current
 
-		scan: for idx := range notResolved {
+		for idx := range notResolved {
 			endpoint := contract.Endpoints[idx]
+			ok := true
+			invalid := false
 
+		req:
 			for _, requirement := range endpoint.Requires.AsSlice() { // FIXME better
 				if !obtainables.Contains(requirement) {
-					delete(notResolved, idx)
-					continue scan
+					invalid = true
+					break req
 				}
 				if !satisfied.Contains(requirement) {
-					continue scan
+					ok = false
+					break req
 				}
 			}
 
-			satisfied.AddAll(endpoint.Provides)
-			ordering = append(ordering, idx)
-			delete(notResolved, idx)
+			if !invalid && ok {
+				satisfied.AddAll(endpoint.Provides)
+				ordering = append(ordering, idx)
+				delete(notResolved, idx)
+				current -= 1
+			}
+
+		}
+
+		if current == last {
+			break
 		}
 	}
 
 	reorder := make([]*model.Endpoint, len(contract.Endpoints))
-	for i, j := range ordering {
+
+	var (
+		i = 0
+		j = 0
+	)
+	for i, j = range ordering {
+		reorder[i] = contract.Endpoints[j]
+	}
+
+	for j := range notResolved {
+		i += 1
 		reorder[i] = contract.Endpoints[j]
 	}
 

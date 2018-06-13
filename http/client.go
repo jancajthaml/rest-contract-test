@@ -72,6 +72,12 @@ func (c *tcpConn) Write(b []byte) (int, error) {
 }
 
 func (client *HttpClient) Call(endpoint *model.Endpoint) error {
+	if endpoint == nil {
+		return fmt.Errorf("no endpoint provided")
+	}
+
+	// fixme add defer recover error, don't panic here
+
 	switch endpoint.Method {
 	case "GET":
 		_, code, err := client.Get(endpoint.URI, endpoint.Request.Headers)

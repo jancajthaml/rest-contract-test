@@ -19,10 +19,10 @@ import (
 
 	"github.com/codegangsta/cli"
 
+	"github.com/jancajthaml/rest-contract-test/http"
 	"github.com/jancajthaml/rest-contract-test/model"
 	"github.com/jancajthaml/rest-contract-test/parser"
 	"github.com/jancajthaml/rest-contract-test/workflow"
-	"github.com/jancajthaml/rest-contract-test/http"
 )
 
 func CmdTest(c *cli.Context) error {
@@ -33,6 +33,7 @@ func CmdTest(c *cli.Context) error {
 
 	contract, err := parser.FromResource(resource)
 	if err != nil {
+		fmt.Println("resource loaded with error", err)
 		return err
 	}
 

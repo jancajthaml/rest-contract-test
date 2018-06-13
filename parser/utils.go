@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	//"net/http"
 
 	gio "github.com/jancajthaml/rest-contract-test/io"
@@ -27,10 +28,31 @@ import (
 	"github.com/jancajthaml/rest-contract-test/parser/swagger"
 
 	"io"
+	"unicode/utf8"
 )
 
+func IsURL(str string) bool {
+	if str == "" || utf8.RuneCountInString(str) >= 2083 || len(str) <= 3 || strings.HasPrefix(str, ".") {
+		return false
+	}
+	if strings.Index(str, "://") == -1 {
+		return false
+	}
+	u, err := url.Parse(str)
+	if err != nil {
+		return false
+	}
+	if strings.HasPrefix(u.Host, ".") {
+		return false
+	}
+	if u.Host == "" && (u.Path != "" && !strings.Contains(u.Path, ".")) {
+		return false
+	}
+	return true
+}
+
 func FromResource(resource string) (*model.Contract, error) {
-	if _, err := url.ParseRequestURI(resource); err == nil {
+	if IsURL(resource) {
 		return fromUri(resource)
 	}
 
@@ -49,8 +71,6 @@ func fromUri(uri string) (*model.Contract, error) {
 	if _, err := io.Copy(buffer, response.Body); err != nil {
 		return nil, err
 	}
-
-	//fmt.Println(string(buffer.Bytes()))
 
 	return nil, fmt.Errorf("loading from uri not implemented")
 }

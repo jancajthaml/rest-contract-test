@@ -1,6 +1,6 @@
 #%RAML 1.0
 title: Contract mock server
-baseUri: http://localhost:{port}
+baseUri: http://ramltestee:{port}
 protocols: [ HTTP ]
 mediaType: application/json
 
@@ -23,8 +23,6 @@ types:
     headers:
       Accept:
         example: application/json
-      x-custom:
-        example: {super-value}
 
 /v{version}/person/{person-id}:
   delete:

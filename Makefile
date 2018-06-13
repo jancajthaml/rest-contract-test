@@ -1,7 +1,7 @@
 CORES := $$(getconf _NPROCESSORS_ONLN)
 
 .PHONY: all
-all: bootstrap package test
+all: bootstrap package test bbtest
 
 .PHONY: bootstrap
 bootstrap:
@@ -57,6 +57,16 @@ verify:
 
 .PHONY: bbtest
 bbtest:
+	@echo "[info] stopping older runs"
+	@(docker rm -f $$(docker-compose ps -q) 2> /dev/null || :) &> /dev/null
+	@echo "[info] running bbtest"
+	@docker-compose run --rm bbtest
+	@echo "[info] stopping runs"
+	@(docker rm -f $$(docker-compose ps -q) 2> /dev/null || :) &> /dev/null
+	@(docker rm -f $$(docker ps -aqf "name=bbtest") || :) &> /dev/null
+
+.PHONY: tracer
+tracer:
 	@eval $(eval ct=$(shell sh -c 'find ./bin -type f -name "darwin*"' | awk '{print $$1}'))
 	#docker-compose run --rm --service-ports testee
 	@echo "[info] test bbtest"
