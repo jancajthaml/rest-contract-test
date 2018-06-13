@@ -16,7 +16,7 @@ RSpec.configure do |config|
     print "[ suite starting ]\n"
 
     # fixme input validation test that binary was built
-    %x(ln -s /opt/binaries/linux-snapshot /bin/contract)
+    %x(ln -s /opt/binaries/linux-latest /bin/contract)
 
     ["/reports"].each { |folder|
       FileUtils.mkdir_p folder

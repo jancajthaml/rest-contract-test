@@ -24,7 +24,7 @@ types:
       Accept:
         example: application/json
 
-/v{version}/person/{person-id}:
+/v{api-version}/person/{person-id}:
   delete:
     responses:
       200:
@@ -40,7 +40,7 @@ types:
             type: PersonData
             example: !include example.person_data.json
 
-/v{version}/person:
+/v{api-version}/person:
   post:
     body:
       application/json:

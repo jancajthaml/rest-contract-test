@@ -15,6 +15,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -85,6 +86,26 @@ func (client *HttpClient) Call(endpoint *model.Endpoint) error {
 			return err
 		}
 		fmt.Println("OK    |", code, *endpoint)
+	case "HEAD":
+		_, code, err := client.Head(endpoint.URI, endpoint.Request.Headers)
+		if err != nil {
+			return err
+		}
+		fmt.Println("OK    |", code, *endpoint)
+	case "DELETE":
+		_, code, err := client.Delete(endpoint.URI, endpoint.Request.Headers)
+		if err != nil {
+			return err
+		}
+		fmt.Println("OK    |", code, *endpoint)
+	case "POST":
+		payload := []byte("{\"name\":\"John Doe\"}")
+		_, code, err := client.Post(endpoint.URI, endpoint.Request.Headers, payload)
+		if err != nil {
+			return err
+		}
+		fmt.Println("OK    |", code, *endpoint)
+
 	default:
 		fmt.Println("SKIP  |", *endpoint)
 	}
@@ -125,6 +146,78 @@ func (c *HttpClient) Do(req *http.Request) (*http.Response, error) {
 
 func (c *HttpClient) Get(url string, headers map[string]string) ([]byte, int, error) {
 	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, -1, err
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return contents, resp.StatusCode, nil
+}
+
+func (c *HttpClient) Delete(url string, headers map[string]string) ([]byte, int, error) {
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, -1, err
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return contents, resp.StatusCode, nil
+}
+
+func (c *HttpClient) Head(url string, headers map[string]string) ([]byte, int, error) {
+	req, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, -1, err
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return contents, resp.StatusCode, nil
+}
+
+func (c *HttpClient) Post(url string, headers map[string]string, payload []byte) ([]byte, int, error) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, -1, err
 	}

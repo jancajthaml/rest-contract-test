@@ -101,6 +101,7 @@ services:
     environment:
       - COMPOSE_PROJECT_NAME
       - VERSION
+      - API_VERSION=1
       - PORT=8080
     volumes:
       - ./reports:/reports

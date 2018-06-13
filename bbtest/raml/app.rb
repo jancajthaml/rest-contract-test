@@ -11,8 +11,8 @@ require 'date'
 ################################################################################
 
 configure do
-  enable :logging
-  disable :dump_errors
+  set :raise_errors => true
+  set :logging, true
 end
 
 ################################################################################
@@ -63,6 +63,8 @@ post '/:version/person' do
   logger.debug "hit POST /{version}/person"
 
   return [ 400, {} ] if @req.nil?
+
+  logger.debug "plaintext playload #{@req}"
 
   first, last, *rest = @req["name"].split(/ /)
   id = "#{first}/#{last}".to_i(36).to_s
