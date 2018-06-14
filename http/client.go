@@ -107,6 +107,7 @@ func (client *HttpClient) Call(endpoint *model.Endpoint) (resp []byte, code int,
 		resp, code, err = client.Post(endpoint.URI, endpoint.Request.Headers, payload)
 
 	default:
+		// FIXME return error here
 		fmt.Println("unknown method", endpoint.Method)
 
 	}

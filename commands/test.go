@@ -44,6 +44,11 @@ func CmdTest(c *cli.Context) error {
 	// TODO after each endpoint is called Mark IT
 
 	for _, endpoint := range contract.Endpoints {
+		// FIXME add Prepare method to endpoint here
+		// this method would JIT fill missing variables if it returns err
+		// which means some variables could not be satisfied it would be marked
+		// as failed and not called at all
+
 		// FIXME add headers
 		content, code, err := client.Call(endpoint)
 		if err != nil {
