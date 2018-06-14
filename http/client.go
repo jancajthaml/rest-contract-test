@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -72,45 +73,50 @@ func (c *tcpConn) Write(b []byte) (int, error) {
 	return c.TCPConn.Write(b)
 }
 
-func (client *HttpClient) Call(endpoint *model.Endpoint) error {
+func (client *HttpClient) Call(endpoint *model.Endpoint) (resp []byte, code int, err error) {
 	if endpoint == nil {
-		return fmt.Errorf("no endpoint provided")
+		err = fmt.Errorf("no endpoint provided")
+		return
 	}
 
 	// fixme add defer recover error, don't panic here
 
 	switch endpoint.Method {
+
 	case "GET":
-		_, code, err := client.Get(endpoint.URI, endpoint.Request.Headers)
-		if err != nil {
-			return err
-		}
-		fmt.Println("OK    |", code, *endpoint)
+		resp, code, err = client.Get(endpoint.URI, endpoint.Request.Headers)
+
 	case "HEAD":
-		_, code, err := client.Head(endpoint.URI, endpoint.Request.Headers)
-		if err != nil {
-			return err
-		}
-		fmt.Println("OK    |", code, *endpoint)
+		resp, code, err = client.Head(endpoint.URI, endpoint.Request.Headers)
+
 	case "DELETE":
-		_, code, err := client.Delete(endpoint.URI, endpoint.Request.Headers)
-		if err != nil {
-			return err
-		}
-		fmt.Println("OK    |", code, *endpoint)
+		resp, code, err = client.Delete(endpoint.URI, endpoint.Request.Headers)
+
 	case "POST":
-		payload := []byte("{\"name\":\"John Doe\"}")
-		_, code, err := client.Post(endpoint.URI, endpoint.Request.Headers, payload)
-		if err != nil {
-			return err
+		var payload []byte
+		if endpoint.Request.Content != nil {
+			switch endpoint.Request.Content.Type {
+			case "application/json":
+				payload, err = json.Marshal(endpoint.Request.Content.Example)
+				if err != nil {
+					return
+				}
+			}
 		}
-		fmt.Println("OK    |", code, *endpoint)
+
+		resp, code, err = client.Post(endpoint.URI, endpoint.Request.Headers, payload)
 
 	default:
-		fmt.Println("SKIP  |", *endpoint)
+		fmt.Println("unknown method", endpoint.Method)
+
 	}
 
-	return nil
+	if code >= 500 {
+		err = fmt.Errorf("server fault")
+		return
+	}
+
+	return
 }
 
 type HttpClient struct {

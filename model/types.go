@@ -14,7 +14,10 @@
 
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Payload struct {
 	Content *Content
@@ -37,11 +40,29 @@ type Endpoint struct {
 	Requires     Set
 }
 
+// FIXME add MarkFailed and MarkSuccessfull methods to endpoint, add *bool variable
+// representing if it was successfull or failed (or <nil> which means skipped)
+
 type Contract struct {
 	Source    string
 	Type      string
 	Name      string
 	Endpoints []*Endpoint
+}
+
+func (ref Endpoint) React(code int, content []byte) {
+
+	switch code {
+
+	case 404, 405:
+		fmt.Println("Invalid Call", code)
+
+	default:
+		fmt.Println("reacting to", code, string(content))
+
+	}
+
+	return
 }
 
 func (ref Endpoint) String() string {

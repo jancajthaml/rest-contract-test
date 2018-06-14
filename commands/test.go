@@ -41,11 +41,22 @@ func CmdTest(c *cli.Context) error {
 
 	Sort(contract)
 
+	// TODO after each endpoint is called Mark IT
+
 	for _, endpoint := range contract.Endpoints {
-		err := client.Call(endpoint)
+		// FIXME add headers
+		content, code, err := client.Call(endpoint)
 		if err != nil {
-			fmt.Println("ERROR |", *endpoint)
+			// FIXME this is only for server (>=500) or runtime fault (exception)
+
+			// FIXME mark endpoint as failed
+
+			fmt.Println("ERROR |", err)
+			continue
 		}
+
+		// FIXME add headers
+		endpoint.React(code, content)
 	}
 
 	return nil
