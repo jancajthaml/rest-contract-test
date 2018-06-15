@@ -16,7 +16,6 @@ package raml
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"math/rand"
 	"path/filepath"
@@ -35,7 +34,7 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 
 	mainFileBytes, err := gio.ReadLocalFile(filePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Problem reading RAML file (Error: %s)", err.Error())
 	}
 
 	mainFileBuffer := bytes.NewBuffer(mainFileBytes)
@@ -50,7 +49,7 @@ func ParseFile(filePath string) (*APIDefinition, error) {
 		}
 
 		if ramlVersion != "#%RAML 1.0" && ramlVersion != "#%RAML 0.8" {
-			return nil, errors.New("Resource is not RAML 0.8 or 1.0")
+			return nil, fmt.Errorf("Resource is not RAML 0.8 or 1.0")
 		}
 	}
 

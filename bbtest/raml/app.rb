@@ -10,6 +10,8 @@ require 'date'
 # configuration
 ################################################################################
 
+#helpers Sinatra::Param
+
 configure do
   set :raise_errors => true
   set :logging, true
@@ -19,6 +21,7 @@ end
 # hooks
 ################################################################################
 before do
+  #content_type :json
   logger.level = 0
   @req = nil
   if request.body.size > 0
@@ -37,13 +40,12 @@ $g_people = Hash.new
 # api
 ################################################################################
 get '/ping' do
-  logger.debug "hit GET /ping"
+  #logger.debug "hit GET /ping"
 
   [ 200, { "time" => DateTime.now.strftime('%Q') }.to_json ]
 end
 
 get '/:version/person' do
-  logger.debug "hit GET /{version}/person"
 
   # fixme list all make it optional
   return [ 400, {} ] unless params.has_key?("LastName")
@@ -60,7 +62,7 @@ get '/:version/person' do
 end
 
 post '/:version/person' do
-  logger.debug "hit POST /{version}/person"
+  #logger.debug "hit POST /{version}/person"
 
   return [ 400, {} ] if @req.nil?
 
@@ -84,7 +86,7 @@ post '/:version/person' do
 end
 
 get '/:version/person/:id' do
-  logger.debug "hit GET /{version}/person/{id}"
+  #logger.debug "hit GET /{version}/person/{id}"
 
   id = params["id"]
 
@@ -96,4 +98,16 @@ get '/:version/person/:id' do
   logger.debug "person #{id} found"
 
   return [ 200, resp.to_json ]
+end
+
+delete '/:version/person/:id' do
+  #logger.debug "hit DELETE /{version}/person/{id}"
+
+  id = params["id"]
+
+  [ 417, {} ] unless $g_people.key?(id)
+
+  $g_people.delete(id)
+
+  return [ 200, {}.to_json ]
 end

@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	gio "github.com/jancajthaml/rest-contract-test/io"
 )
 
 var placeholderPattern = regexp.MustCompile(`(?:\{|\<{2}).{1,100}?(?:\}|\>{2})`)
@@ -58,16 +56,10 @@ type Contract struct {
 
 func (ref *Endpoint) Prepare(variables map[string]string) error {
 
-	//fmt.Println(">>> variables", variables.AsSlice())
-
-	//fmt.Println("preparing endpoint")
-	//fmt.Println("before", ref)
-
 	// uri requirements
 	for _, submatches := range placeholderPattern.FindAllStringSubmatch(ref.URI, -1) {
 		for _, match := range submatches {
 			if rv, ok := variables[match]; ok {
-				fmt.Println("satisfied", match, "in uri", rv)
 				ref.URI = strings.Replace(ref.URI, match, rv, -1)
 			} else {
 				return fmt.Errorf("unsatisfied requirement %s", match)
@@ -81,7 +73,6 @@ func (ref *Endpoint) Prepare(variables map[string]string) error {
 		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 			for _, match := range submatches {
 				if rv, ok := variables[match]; ok {
-					fmt.Println("satisfied", match, "in queryString", rv)
 					ref.QueryStrings[k] = strings.Replace(val, match, rv, -1)
 				} else {
 					return fmt.Errorf("unsatisfied requirement %s", match)
@@ -95,7 +86,6 @@ func (ref *Endpoint) Prepare(variables map[string]string) error {
 		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 			for _, match := range submatches {
 				if rv, ok := variables[match]; ok {
-					fmt.Println("satisfied", match, "in headers", rv)
 					ref.Request.Headers[k] = strings.Replace(val, match, rv, -1)
 				} else {
 					return fmt.Errorf("unsatisfied requirement %s", match)
@@ -109,9 +99,9 @@ func (ref *Endpoint) Prepare(variables map[string]string) error {
 
 func (ref Endpoint) Mark(err error) {
 	if err != nil {
-		fmt.Println("Failed", ref.Method, ref.URI, "with", err)
+		fmt.Println("Failed", ref, "with", err)
 	} else {
-		fmt.Println("Success", ref.Method, ref.URI)
+		fmt.Println("Success", ref)
 	}
 }
 
@@ -138,13 +128,70 @@ func (ref Endpoint) React(variables map[string]string, code int, respContent []b
 					return
 				}
 
-				body = gio.UntypedConvert(body)
-
-				fmt.Println("body of response is", body, "with reference of", response.Content.Example)
+				if err := resolveVariables(body, response.Content.Example, &variables); err != nil {
+					ref.Mark(err)
+				}
 			}
 		}
 
 		ref.Mark(nil)
+
+	}
+
+	return
+}
+
+func resolveVariables(variable interface{}, reference interface{}, result *map[string]string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				err = fmt.Errorf(x)
+			case error:
+				err = x
+			default:
+				err = fmt.Errorf("Unknown panic")
+			}
+		}
+	}()
+
+	switch val := reference.(type) {
+
+	case string:
+		// FIXME test other types like integer and boolean
+		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
+			for _, match := range submatches {
+				(*result)[match] = variable.(string)
+			}
+		}
+
+	case map[string]interface{}:
+		for k, v := range val {
+			if resolveVariables(variable.(map[string]interface{})[k], v, result) != nil {
+				return
+			}
+		}
+
+	case map[interface{}]interface{}:
+		for k, v := range val {
+			if resolveVariables(variable.(map[interface{}]interface{})[k], v, result) != nil {
+				return
+			}
+		}
+
+	case []interface{}:
+		for k, v := range val {
+			if resolveVariables(variable.([]interface{})[k], v, result) != nil {
+				return
+			}
+		}
+
+	case []string:
+		for k, v := range val {
+			if resolveVariables(variable.([]string)[k], v, result) != nil {
+				return
+			}
+		}
 
 	}
 

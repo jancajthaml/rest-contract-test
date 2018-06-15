@@ -79,18 +79,23 @@ func (client *HttpClient) Call(endpoint *model.Endpoint) (resp []byte, code int,
 		return
 	}
 
+	qs := model.Urlencode(endpoint.QueryStrings)
+	if len(qs) != 0 {
+		qs = "?" + qs
+	}
+
 	// fixme add defer recover error, don't panic here
 
 	switch endpoint.Method {
 
 	case "GET":
-		resp, code, err = client.Get(endpoint.URI, endpoint.Request.Headers)
+		resp, code, err = client.Get(endpoint.URI+qs, endpoint.Request.Headers)
 
 	case "HEAD":
-		resp, code, err = client.Head(endpoint.URI, endpoint.Request.Headers)
+		resp, code, err = client.Head(endpoint.URI+qs, endpoint.Request.Headers)
 
 	case "DELETE":
-		resp, code, err = client.Delete(endpoint.URI, endpoint.Request.Headers)
+		resp, code, err = client.Delete(endpoint.URI+qs, endpoint.Request.Headers)
 
 	case "POST":
 		var payload []byte
@@ -104,7 +109,7 @@ func (client *HttpClient) Call(endpoint *model.Endpoint) (resp []byte, code int,
 			}
 		}
 
-		resp, code, err = client.Post(endpoint.URI, endpoint.Request.Headers, payload)
+		resp, code, err = client.Post(endpoint.URI+qs, endpoint.Request.Headers, payload)
 
 	case "PUT":
 		var payload []byte
@@ -118,7 +123,7 @@ func (client *HttpClient) Call(endpoint *model.Endpoint) (resp []byte, code int,
 			}
 		}
 
-		resp, code, err = client.Put(endpoint.URI, endpoint.Request.Headers, payload)
+		resp, code, err = client.Put(endpoint.URI+qs, endpoint.Request.Headers, payload)
 
 	default:
 		// FIXME return error here
