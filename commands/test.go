@@ -39,29 +39,29 @@ func CmdTest(c *cli.Context) error {
 
 	client := http.NewHttpClient()
 
+	variables := make(map[string]string)
+
 	Sort(contract)
 
 	// TODO after each endpoint is called Mark IT
 
 	for _, endpoint := range contract.Endpoints {
-		// FIXME add Prepare method to endpoint here
-		// this method would JIT fill missing variables if it returns err
-		// which means some variables could not be satisfied it would be marked
-		// as failed and not called at all
 
-		// FIXME add headers
-		content, code, err := client.Call(endpoint)
+		err := endpoint.Prepare(variables)
 		if err != nil {
-			// FIXME this is only for server (>=500) or runtime fault (exception)
-
-			// FIXME mark endpoint as failed
-
-			fmt.Println("ERROR |", err)
+			endpoint.Mark(err)
 			continue
 		}
 
 		// FIXME add headers
-		endpoint.React(code, content)
+		content, code, err := client.Call(endpoint)
+		if err != nil {
+			endpoint.Mark(err)
+			continue
+		}
+
+		// FIXME add headers
+		endpoint.React(variables, code, content)
 	}
 
 	return nil

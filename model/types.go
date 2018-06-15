@@ -17,7 +17,11 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
 )
+
+var placeholderPattern = regexp.MustCompile(`(?:\{|\<{2}).{1,100}?(?:\}|\>{2})`)
 
 type Payload struct {
 	Content *Content
@@ -50,15 +54,81 @@ type Contract struct {
 	Endpoints []*Endpoint
 }
 
-func (ref Endpoint) React(code int, content []byte) {
+func (ref *Endpoint) Prepare(variables map[string]string) error {
+
+	//fmt.Println(">>> variables", variables.AsSlice())
+
+	//fmt.Println("preparing endpoint")
+	//fmt.Println("before", ref)
+
+	// uri requirements
+	for _, submatches := range placeholderPattern.FindAllStringSubmatch(ref.URI, -1) {
+		for _, match := range submatches {
+			if rv, ok := variables[match]; ok {
+				fmt.Println("satisfied", match, "in uri", rv)
+				ref.URI = strings.Replace(ref.URI, match, rv, -1)
+			} else {
+				return fmt.Errorf("unsatisfied requirement %s", match)
+			}
+		}
+
+	}
+
+	// queryString requirements
+	for k, val := range ref.QueryStrings {
+		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
+			for _, match := range submatches {
+				if rv, ok := variables[match]; ok {
+					fmt.Println("satisfied", match, "in queryString", rv)
+					ref.QueryStrings[k] = strings.Replace(val, match, rv, -1)
+				} else {
+					return fmt.Errorf("unsatisfied requirement %s", match)
+				}
+			}
+		}
+	}
+
+	// headers requirements
+	for k, val := range ref.Request.Headers {
+		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
+			for _, match := range submatches {
+				if rv, ok := variables[match]; ok {
+					fmt.Println("satisfied", match, "in headers", rv)
+					ref.Request.Headers[k] = strings.Replace(val, match, rv, -1)
+				} else {
+					return fmt.Errorf("unsatisfied requirement %s", match)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (ref Endpoint) Mark(err error) {
+	if err != nil {
+		fmt.Println("Failed", ref.Method, ref.URI, "with", err)
+	} else {
+		fmt.Println("Success", ref.Method, ref.URI)
+	}
+}
+
+func (ref Endpoint) React(variables map[string]string, code int, content []byte) {
 
 	switch code {
 
 	case 404, 405:
-		fmt.Println("Invalid Call", code)
+		ref.Mark(fmt.Errorf("Invalid call %d", code))
 
 	default:
-		fmt.Println("reacting to", code, string(content))
+		response, ok := ref.Responses[code]
+		if !ok {
+			ref.Mark(fmt.Errorf("Undocumented response code %d", code))
+		}
+
+		//fmt.Println("now verify response", response)
+
+		ref.Mark(nil)
 
 	}
 

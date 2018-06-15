@@ -106,6 +106,20 @@ func (client *HttpClient) Call(endpoint *model.Endpoint) (resp []byte, code int,
 
 		resp, code, err = client.Post(endpoint.URI, endpoint.Request.Headers, payload)
 
+	case "PUT":
+		var payload []byte
+		if endpoint.Request.Content != nil {
+			switch endpoint.Request.Content.Type {
+			case "application/json":
+				payload, err = json.Marshal(endpoint.Request.Content.Example)
+				if err != nil {
+					return
+				}
+			}
+		}
+
+		resp, code, err = client.Put(endpoint.URI, endpoint.Request.Headers, payload)
+
 	default:
 		// FIXME return error here
 		fmt.Println("unknown method", endpoint.Method)
@@ -225,6 +239,30 @@ func (c *HttpClient) Head(url string, headers map[string]string) ([]byte, int, e
 
 func (c *HttpClient) Post(url string, headers map[string]string, payload []byte) ([]byte, int, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, -1, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, -1, err
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return contents, resp.StatusCode, nil
+}
+
+func (c *HttpClient) Put(url string, headers map[string]string, payload []byte) ([]byte, int, error) {
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, -1, err
 	}
