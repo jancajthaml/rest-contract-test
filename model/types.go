@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	gio "github.com/jancajthaml/rest-contract-test/io"
 )
 
 var placeholderPattern = regexp.MustCompile(`(?:\{|\<{2}).{1,100}?(?:\}|\>{2})`)
@@ -113,7 +115,7 @@ func (ref Endpoint) Mark(err error) {
 	}
 }
 
-func (ref Endpoint) React(variables map[string]string, code int, content []byte) {
+func (ref Endpoint) React(variables map[string]string, code int, respContent []byte) {
 
 	switch code {
 
@@ -124,9 +126,23 @@ func (ref Endpoint) React(variables map[string]string, code int, content []byte)
 		response, ok := ref.Responses[code]
 		if !ok {
 			ref.Mark(fmt.Errorf("Undocumented response code %d", code))
+			return
 		}
 
-		//fmt.Println("now verify response", response)
+		if response.Content != nil {
+			switch response.Content.Type {
+			case "application/json":
+				var body interface{}
+				if err := json.Unmarshal(respContent, &body); err != nil {
+					ref.Mark(err)
+					return
+				}
+
+				body = gio.UntypedConvert(body)
+
+				fmt.Println("body of response is", body, "with reference of", response.Content.Example)
+			}
+		}
 
 		ref.Mark(nil)
 
