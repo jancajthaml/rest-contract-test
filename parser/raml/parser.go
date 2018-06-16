@@ -232,9 +232,11 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 	// FIXME copy from responses
 	rs := make(map[int]model.Payload, 0)
 	if len(method.Responses) != 0 {
-		//fmt.Println("checking (0)", kind, path)
 
 		for code, response := range method.Responses {
+
+			rs[code] = model.Payload{}
+
 			if response.Referenced != nil {
 				fmt.Println("response is referenced")
 				continue
@@ -251,6 +253,7 @@ func processMethod(contract *model.Contract, path string, kind string, method *M
 
 		}
 	}
+
 	if method.Bodies == nil {
 		contract.Endpoints = append(contract.Endpoints, &model.Endpoint{
 			URI:          path,

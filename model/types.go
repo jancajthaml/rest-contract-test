@@ -115,6 +115,7 @@ func (ref Endpoint) React(variables map[string]string, code int, respContent []b
 	default:
 		response, ok := ref.Responses[code]
 		if !ok {
+			fmt.Println(ref.Responses)
 			ref.Mark(fmt.Errorf("Undocumented response code %d", code))
 			return
 		}
@@ -128,9 +129,7 @@ func (ref Endpoint) React(variables map[string]string, code int, respContent []b
 					return
 				}
 
-				if err := resolveVariables(body, response.Content.Example, &variables); err != nil {
-					ref.Mark(err)
-				}
+				resolveVariables(body, response.Content.Example, &variables)
 			}
 		}
 
@@ -141,18 +140,9 @@ func (ref Endpoint) React(variables map[string]string, code int, respContent []b
 	return
 }
 
-func resolveVariables(variable interface{}, reference interface{}, result *map[string]string) (err error) {
+func resolveVariables(variable interface{}, reference interface{}, result *map[string]string) {
 	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("Unknown panic")
-			}
-		}
+		recover()
 	}()
 
 	switch val := reference.(type) {
@@ -167,30 +157,22 @@ func resolveVariables(variable interface{}, reference interface{}, result *map[s
 
 	case map[string]interface{}:
 		for k, v := range val {
-			if resolveVariables(variable.(map[string]interface{})[k], v, result) != nil {
-				return
-			}
+			resolveVariables(variable.(map[string]interface{})[k], v, result)
 		}
 
 	case map[interface{}]interface{}:
 		for k, v := range val {
-			if resolveVariables(variable.(map[interface{}]interface{})[k], v, result) != nil {
-				return
-			}
+			resolveVariables(variable.(map[interface{}]interface{})[k], v, result)
 		}
 
 	case []interface{}:
 		for k, v := range val {
-			if resolveVariables(variable.([]interface{})[k], v, result) != nil {
-				return
-			}
+			resolveVariables(variable.([]interface{})[k], v, result)
 		}
 
 	case []string:
 		for k, v := range val {
-			if resolveVariables(variable.([]string)[k], v, result) != nil {
-				return
-			}
+			resolveVariables(variable.([]string)[k], v, result)
 		}
 
 	}
