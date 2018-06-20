@@ -76,3 +76,15 @@ func (set *Set) Copy() Set {
 func (set Set) String() string {
 	return fmt.Sprintf("%v", set.AsSlice())
 }
+
+// Iterate returns iterator
+func (set *Set) Iterate() <-chan string {
+	c := make(chan string)
+	go func() {
+		for v := range set.items {
+			c <- v
+		}
+		close(c)
+	}()
+	return c
+}

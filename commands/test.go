@@ -16,6 +16,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/codegangsta/cli"
 
@@ -23,6 +24,8 @@ import (
 	"github.com/jancajthaml/rest-contract-test/model"
 	"github.com/jancajthaml/rest-contract-test/parser"
 	"github.com/jancajthaml/rest-contract-test/workflow"
+
+	. "github.com/logrusorgru/aurora"
 )
 
 func CmdTest(c *cli.Context) error {
@@ -43,8 +46,6 @@ func CmdTest(c *cli.Context) error {
 
 	Sort(contract)
 
-	// TODO after each endpoint is called Mark IT
-
 	for _, endpoint := range contract.Endpoints {
 
 		err := endpoint.Prepare(variables)
@@ -62,6 +63,19 @@ func CmdTest(c *cli.Context) error {
 
 		// FIXME add headers
 		endpoint.React(variables, code, content)
+	}
+
+	for _, endpoint := range contract.Endpoints {
+		if !endpoint.Marked {
+			os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", Bold(Brown("SKIPPED")), Brown(endpoint.Method), Brown(endpoint.URI)))
+			continue
+		}
+		if endpoint.Error != nil {
+			os.Stderr.WriteString(fmt.Sprintf("%s %s %s\n", Bold(Red("ERROR")), Red(endpoint.Method), Red(endpoint.URI)))
+			continue
+		}
+
+		os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", Bold(Green("PASS")), Green(endpoint.Method), Green(endpoint.URI)))
 	}
 
 	return nil

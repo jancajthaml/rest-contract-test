@@ -58,7 +58,7 @@ services:
   fetch:
     extends: go
     entrypoint: ["dep"]
-    command: ["ensure", "-add", "github.com/advance512/yaml"]
+    command: ["ensure", "-add", "github.com/logrusorgru/aurora"]
 
   # -------------------------------------------------------------------------- #
 

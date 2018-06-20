@@ -16,3 +16,6 @@
   branch = "v2"
 
   
+[[constraint]]
+  branch = "master"
+  name = "github.com/logrusorgru/aurora"

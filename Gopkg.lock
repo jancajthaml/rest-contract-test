@@ -14,6 +14,12 @@
   version = "v1.20.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/logrusorgru/aurora"
+  packages = ["."]
+  revision = "d694e6f975a9109e2b063829d563a7c153c4b53c"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
@@ -37,6 +43,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5ccffa1e28e1e246555778cbae07538de57cad19a002146169245b4cbdec17fd"
+  inputs-digest = "5f802bdc56b81c31058833ced01801b9f2bd9c199a4c34d74c55e4a302c5e8b9"
   solver-name = "gps-cdcl"
   solver-version = 1

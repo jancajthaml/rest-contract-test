@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -42,6 +43,8 @@ type Endpoint struct {
 	QueryStrings map[string]string
 	Provides     Set
 	Requires     Set
+	Error        error
+	Marked       bool
 }
 
 // FIXME add MarkFailed and MarkSuccessfull methods to endpoint, add *bool variable
@@ -97,15 +100,14 @@ func (ref *Endpoint) Prepare(variables map[string]string) error {
 	return nil
 }
 
-func (ref Endpoint) Mark(err error) {
+func (ref *Endpoint) Mark(err error) {
 	if err != nil {
-		fmt.Println("Failed", ref, "with", err)
-	} else {
-		fmt.Println("Success", ref)
+		ref.Error = err
 	}
+	ref.Marked = true
 }
 
-func (ref Endpoint) React(variables map[string]string, code int, respContent []byte) {
+func (ref *Endpoint) React(variables map[string]string, code int, respContent []byte) {
 
 	switch code {
 
@@ -148,10 +150,16 @@ func resolveVariables(variable interface{}, reference interface{}, result *map[s
 	switch val := reference.(type) {
 
 	case string:
-		// FIXME test other types like integer and boolean
 		for _, submatches := range placeholderPattern.FindAllStringSubmatch(val, -1) {
 			for _, match := range submatches {
-				(*result)[match] = variable.(string)
+				switch typed := variable.(type) {
+				case string:
+					(*result)[match] = typed
+				case int:
+					(*result)[match] = strconv.Itoa(typed)
+				case bool:
+					(*result)[match] = strconv.FormatBool(typed)
+				}
 			}
 		}
 

@@ -225,8 +225,12 @@ func SortEndpoints(contract *model.Contract) error {
 			ok := true
 			invalid := false
 
+			if endpoint.Method == "DELETE" {
+				continue
+			}
+
 		req:
-			for _, requirement := range endpoint.Requires.AsSlice() { // FIXME better
+			for requirement := range endpoint.Requires.Iterate() {
 				if !obtainables.Contains(requirement) {
 					invalid = true
 					break req
