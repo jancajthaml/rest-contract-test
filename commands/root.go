@@ -27,6 +27,10 @@ func GlobalFlags() []cli.Flag {
 			Name:  "verbose",
 			Usage: "enable verbose logging",
 		},
+		cli.BoolFlag{
+			Name:  "no-color",
+			Usage: "disable color output",
+		},
 	}
 }
 

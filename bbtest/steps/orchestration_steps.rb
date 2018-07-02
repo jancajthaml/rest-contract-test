@@ -9,7 +9,6 @@ step "no :container :label is running" do |container, label|
 
   ids.each { |id|
     eventually(timeout: 3) {
-      puts "wanting to kill #{id}"
       send ":container running state is :state", id, false
 
       label = %x(docker inspect --format='{{.Name}}' #{id})

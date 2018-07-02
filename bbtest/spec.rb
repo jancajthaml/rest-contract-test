@@ -15,6 +15,8 @@ RSpec.configure do |config|
   config.before(:suite) do |_|
     print "[ suite starting ]\n"
 
+    $call_id = 0
+
     # fixme input validation test that binary was built
     %x(ln -s /opt/binaries/linux-latest /bin/contract)
 
@@ -46,6 +48,12 @@ RSpec.configure do |config|
     (
       get_containers.call("jancajthaml/rest-contract-test-ramltestee")
     ).flatten.each { |container| teardown_container.call(container) }
+
+    Dir.glob("/var/log/contract_*").each { |file|
+      puts "deleting file #{file}"
+      #FileUtils.mkdir_p folder
+      FileUtils.rm_rf file
+    }
 
     print "[ suite ended    ]"
   end
