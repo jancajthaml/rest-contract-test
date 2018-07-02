@@ -25,7 +25,7 @@ import (
 	"github.com/jancajthaml/rest-contract-test/parser"
 	"github.com/jancajthaml/rest-contract-test/workflow"
 
-	. "github.com/logrusorgru/aurora"
+	"github.com/logrusorgru/aurora"
 )
 
 func CmdTest(c *cli.Context) error {
@@ -39,6 +39,8 @@ func CmdTest(c *cli.Context) error {
 		fmt.Println("resource loaded with error", err)
 		return err
 	}
+
+	tty := aurora.NewAurora(!c.GlobalBool("no-color"))
 
 	client := http.NewHttpClient()
 
@@ -67,15 +69,15 @@ func CmdTest(c *cli.Context) error {
 
 	for _, endpoint := range contract.Endpoints {
 		if !endpoint.Marked {
-			os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", Bold(Brown("SKIPPED")), Brown(endpoint.Method), Brown(endpoint.URI)))
+			os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", tty.Bold(tty.Brown("SKIPPED")), tty.Brown(endpoint.Method), tty.Brown(endpoint.URI)))
 			continue
 		}
 		if endpoint.Error != nil {
-			os.Stderr.WriteString(fmt.Sprintf("%s %s %s\n", Bold(Red("ERROR")), Red(endpoint.Method), Red(endpoint.URI)))
+			os.Stderr.WriteString(fmt.Sprintf("%s %s %s\n", tty.Bold(tty.Red("ERROR")), tty.Red(endpoint.Method), tty.Red(endpoint.URI)))
 			continue
 		}
 
-		os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", Bold(Green("PASS")), Green(endpoint.Method), Green(endpoint.URI)))
+		os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", tty.Bold(tty.Green("PASS")), tty.Green(endpoint.Method), tty.Green(endpoint.URI)))
 	}
 
 	return nil
