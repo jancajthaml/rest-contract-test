@@ -71,7 +71,7 @@ services:
   package:
     extends: go
     entrypoint: ["/opt/lifecycle/package"]
-    command: ["-t", "linux"]
+    command: ["-t", "linux,darwin"]
 
   # -------------------------------------------------------------------------- #
 
@@ -106,6 +106,7 @@ services:
     volumes:
       - ./reports:/reports
       - ./bbtest:/opt/bbtest
+      - ./spec:/opt/spec
       - ./bin:/opt/binaries
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers:/var/lib/docker/containers

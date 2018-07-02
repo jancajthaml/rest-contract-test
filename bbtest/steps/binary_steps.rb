@@ -5,6 +5,6 @@ step "contract is run with following parameres" do |parameters|
   }.flatten.reject(&:empty?).join(" ")
 
   $call_id += 1
-  std = %x(contract #{args} >/var/log/contract_#{$call_id}.log 2>&1)
-  expect($?).to be_success, std
+  %x(contract #{args} >/var/log/contract_#{$call_id}.log 2>&1)
+  expect($?).to be_success, %x(cat /var/log/contract_#{$call_id}.log)
 end
