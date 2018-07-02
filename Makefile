@@ -8,6 +8,7 @@ bootstrap:
 	docker-compose build go
 	docker-compose run --rm sync
 	docker-compose run --rm package -t darwin,linux
+	docker-compose build mock
 
 .PHONY: fetch
 fetch:

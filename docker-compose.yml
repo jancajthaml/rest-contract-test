@@ -71,16 +71,16 @@ services:
   package:
     extends: go
     entrypoint: ["/opt/lifecycle/package"]
-    command: ["-t", "linux,darwin"]
+    command: ["-t", "linux"]
 
   # -------------------------------------------------------------------------- #
 
-  ramltestee:
-    hostname: ramltestee
+  mock:
+    hostname: mock
     build:
       dockerfile: Dockerfile
       context: bbtest/raml
-    image: jancajthaml/rest-contract-test-ramltestee
+    image: jancajthaml/rest-contract-test-mock
     ports:
       - "8080:8080/tcp"
 

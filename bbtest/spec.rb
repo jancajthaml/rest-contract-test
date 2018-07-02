@@ -46,12 +46,10 @@ RSpec.configure do |config|
     end
 
     (
-      get_containers.call("jancajthaml/rest-contract-test-ramltestee")
+      get_containers.call("jancajthaml/rest-contract-test-mock")
     ).flatten.each { |container| teardown_container.call(container) }
 
     Dir.glob("/var/log/contract_*").each { |file|
-      puts "deleting file #{file}"
-      #FileUtils.mkdir_p folder
       FileUtils.rm_rf file
     }
 

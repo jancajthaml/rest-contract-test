@@ -1,9 +1,9 @@
 Feature: Binary test
 
   Scenario: run binary
-    Given ramltestee is running
+    Given mock is running
     Then  contract is run with following parameres
     """
     --verbose --no-color test /opt/bbtest/raml/api.raml
     """
-    And   ramltestee is not running
+    And mock is not running
