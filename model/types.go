@@ -52,12 +52,16 @@ type Endpoint struct {
 
 type Contract struct {
 	Source    string
+	BaseUri   string
 	Type      string
 	Name      string
 	Endpoints []*Endpoint
 }
 
 func (ref *Endpoint) Prepare(variables map[string]string) error {
+	if ref == nil {
+		return nil
+	}
 
 	// uri requirements
 	for _, submatches := range placeholderPattern.FindAllStringSubmatch(ref.URI, -1) {
@@ -101,6 +105,9 @@ func (ref *Endpoint) Prepare(variables map[string]string) error {
 }
 
 func (ref *Endpoint) Mark(err error) {
+	if ref == nil {
+		return
+	}
 	if err != nil {
 		ref.Error = err
 	}
@@ -108,6 +115,9 @@ func (ref *Endpoint) Mark(err error) {
 }
 
 func (ref *Endpoint) React(variables map[string]string, code int, respContent []byte) {
+	if ref == nil {
+		return
+	}
 
 	switch code {
 

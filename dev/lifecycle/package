@@ -1,31 +1,42 @@
 #!/bin/bash
 
-set -eo pipefail
-
+set -Eeuo pipefail
 trap exit INT TERM
 
 dist=bin
-version=latest
 platforms=(darwin)
 
+sem_open() {
+  mkfifo pipe-$$
+  exec 3<>pipe-$$
+  rm pipe-$$
+  local parallelism=${1}
+  for ((;parallelism>0;parallelism--)) ; do
+    printf %s 000 >&3
+  done
+}
 
-
-
-################################################################################
+sem_put() {
+  local x
+  read -u 3 -n 3 x && ((0==x)) || {
+    exit $x
+  }
+  (
+    "$@"
+    printf '%.3d' $? >&3
+  )&
+}
 
 get_version() {
-  if [ -n "${VERSION}" ] ; then
-    echo "${VERSION}"
-  elif [ -n "${GIT_TAG_NAME}" ] && [[ "${GIT_TAG_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]] ; then
-    echo "${GIT_TAG_NAME}"
-  else
-    echo "${version}"
+  version=$(git rev-parse --abbrev-ref HEAD 2> /dev/null | rev | cut -d/ -f1 | rev)
+  if [ $? -ne 0 ] || [[ "${version}" == "master" ]] ; then
+    version=latest
   fi
+  echo "${version}"
 }
 
 package_service() {
-  output=${1}/${2}-${3}
-
+  local output=${1}/${2}-${3}
   if [ -f ${output} ] ; then
     rm -f ${output}
   fi
@@ -45,8 +56,6 @@ package_service() {
 
   chmod +x ${output}
 }
-
-################################################################################
 
 while [[ $# -gt 0 ]] ; do
 key="$1"
@@ -68,19 +77,17 @@ case $key in
 esac
 done
 
-################################################################################
+sem_open $(getconf _NPROCESSORS_ONLN)
 
 echo "[info] cleaning"
 go clean
 
-echo "[info] packaging ${version}"
 version=$(get_version)
+echo "[info] packaging ${version}"
 for platform in "${platforms[@]}" ; do
-  (package_service ${dist} ${platform} ${version}) #&
+  sem_put package_service ${dist} ${platform} ${version}
 done
-#wait
+wait
 
 echo "[info] done"
 ls -1 ${dist} | sed "s/.*/       + ${dist}\/&/"
-
-################################################################################

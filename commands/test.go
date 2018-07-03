@@ -41,10 +41,14 @@ func CmdTest(c *cli.Context) error {
 	}
 
 	tty := aurora.NewAurora(!c.GlobalBool("no-color"))
-
-	client := http.NewHttpClient()
-
 	variables := make(map[string]string)
+
+	serverPrefix := c.GlobalString("server")
+	if len(serverPrefix) == 0 {
+		serverPrefix = contract.BaseUri
+	} 
+
+	client := http.NewHttpClient(serverPrefix)
 
 	Sort(contract)
 
@@ -68,16 +72,19 @@ func CmdTest(c *cli.Context) error {
 	}
 
 	for _, endpoint := range contract.Endpoints {
+		if endpoint == nil {
+			continue
+		}
 		if !endpoint.Marked {
-			os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", tty.Bold(tty.Brown("SKIPPED")), tty.Brown(endpoint.Method), tty.Brown(endpoint.URI)))
+			os.Stdout.WriteString(fmt.Sprintf("%s % 6s %s%s\n", tty.Bold(tty.Brown("SKIPPED")), tty.Brown(endpoint.Method), tty.Brown(serverPrefix),  tty.Brown(endpoint.URI)))
 			continue
 		}
 		if endpoint.Error != nil {
-			os.Stderr.WriteString(fmt.Sprintf("%s %s %s\n", tty.Bold(tty.Red("ERROR")), tty.Red(endpoint.Method), tty.Red(endpoint.URI)))
+			os.Stderr.WriteString(fmt.Sprintf("%s % 6s %s%s\n", tty.Bold(tty.Red("ERROR")), tty.Red(endpoint.Method), tty.Red(serverPrefix), tty.Red(endpoint.URI)))
 			continue
 		}
 
-		os.Stdout.WriteString(fmt.Sprintf("%s %s %s\n", tty.Bold(tty.Green("PASS")), tty.Green(endpoint.Method), tty.Green(endpoint.URI)))
+		os.Stdout.WriteString(fmt.Sprintf("%s % 6s %s%s\n", tty.Bold(tty.Green("PASS")), tty.Green(endpoint.Method), tty.Green(serverPrefix), tty.Green(endpoint.URI)))
 	}
 
 	return nil

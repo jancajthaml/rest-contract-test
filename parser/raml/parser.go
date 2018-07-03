@@ -137,13 +137,14 @@ func NewRaml(file string) (*model.Contract, error) {
 	}
 
 	for path, v := range rootResource.Resources {
-		walk(contract, prefix+path, &v,
+		walk(contract, path, &v,
 			make(map[string]string), make(map[string]string), make(map[int]model.Payload),
 			queryParamsSecurity, queryParamsTraits,
 			headersSecurity, headersTraits)
 	}
 
 	contract.Type = rootResource.RAMLVersion
+	contract.BaseUri = prefix
 
 	return contract, nil
 }

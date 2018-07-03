@@ -31,6 +31,10 @@ func GlobalFlags() []cli.Flag {
 			Name:  "no-color",
 			Usage: "disable color output",
 		},
+		cli.StringFlag{
+			Name:  "server",
+			Usage: "override server uri if its running somewhere else than documented",
+		},
 	}
 }
 
@@ -51,6 +55,9 @@ func NotFound(c *cli.Context, command string) {
 
 func try(fn func(c *cli.Context) error) func(c *cli.Context) error {
 	return func(c *cli.Context) error {
+
+		//fmt.Println(c.GlobalString("server"))
+
 		// FIXME deffer error here
 
 		if err := fn(c); err != nil {

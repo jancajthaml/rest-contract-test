@@ -265,9 +265,10 @@ func SortEndpoints(contract *model.Contract) error {
 		reorder[i] = contract.Endpoints[j]
 	}
 
-	for j := range notResolved {
-		i += 1
+	i = len(ordering)
+	for j = range notResolved {
 		reorder[i] = contract.Endpoints[j]
+		i += 1
 	}
 
 	contract.Endpoints = reorder

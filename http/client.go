@@ -141,9 +141,10 @@ func (client *HttpClient) Call(endpoint *model.Endpoint) (resp []byte, code int,
 
 type HttpClient struct {
 	client *http.Client
+	server string
 }
 
-func NewHttpClient() *HttpClient {
+func NewHttpClient(server string) *HttpClient {
 	cookieJar, _ := cookiejar.New(nil)
 
 	transport := &http.Transport{
@@ -163,6 +164,7 @@ func NewHttpClient() *HttpClient {
 
 	return &HttpClient{
 		client: client,
+		server: server,
 	}
 }
 
@@ -171,7 +173,7 @@ func (c *HttpClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 func (c *HttpClient) Get(url string, headers map[string]string) ([]byte, int, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", c.server+url, nil)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -195,7 +197,7 @@ func (c *HttpClient) Get(url string, headers map[string]string) ([]byte, int, er
 }
 
 func (c *HttpClient) Delete(url string, headers map[string]string) ([]byte, int, error) {
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequest("DELETE", c.server+url, nil)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -219,7 +221,7 @@ func (c *HttpClient) Delete(url string, headers map[string]string) ([]byte, int,
 }
 
 func (c *HttpClient) Head(url string, headers map[string]string) ([]byte, int, error) {
-	req, err := http.NewRequest("HEAD", url, nil)
+	req, err := http.NewRequest("HEAD", c.server+url, nil)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -243,7 +245,7 @@ func (c *HttpClient) Head(url string, headers map[string]string) ([]byte, int, e
 }
 
 func (c *HttpClient) Post(url string, headers map[string]string, payload []byte) ([]byte, int, error) {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("POST", c.server+url, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, -1, err
 	}
@@ -267,7 +269,7 @@ func (c *HttpClient) Post(url string, headers map[string]string, payload []byte)
 }
 
 func (c *HttpClient) Put(url string, headers map[string]string, payload []byte) ([]byte, int, error) {
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("PUT", c.server+url, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, -1, err
 	}
