@@ -10,19 +10,13 @@ step "logs contains following" do |args|
   end
 
   contents = File.open(abspath, 'rb').read.split("\n").map(&:strip).reject(&:empty?)
-
-  puts "expected lines: #{lines}"
-  puts "actual logs: #{contents}"
-  #puts contents
-
-  #lines.
-
-  #{}%x(docker logs #{container} >/reports/#{label}.log 2>&1)
-
-  #containers = %x(docker ps -a -f -f name=#{label} | awk '{ print $1,$2 }' | sed 1,1d)
-
-
-
-  #std = %x(contract #{args})
-  #expect($?).to be_success, std
+  lines.each { |line|
+    found = false
+    contents.each { |l|
+      next unless l.include? line
+      found = true
+      break
+    }
+    raise "#{line} was not found in logs:\n#{contents}" unless found
+  }
 end

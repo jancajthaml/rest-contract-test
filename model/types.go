@@ -47,9 +47,6 @@ type Endpoint struct {
 	Marked       bool
 }
 
-// FIXME add MarkFailed and MarkSuccessfull methods to endpoint, add *bool variable
-// representing if it was successfull or failed (or <nil> which means skipped)
-
 type Contract struct {
 	Source    string
 	BaseUri   string
